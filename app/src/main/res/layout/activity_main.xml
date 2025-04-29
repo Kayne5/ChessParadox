@@ -9,11 +9,12 @@
 
     <com.example.ChessParadox.Main.Chessboardview
         android:id="@+id/chessboardview"
-        android:layout_width="411dp"
-        android:layout_height="734dp"
+        android:layout_width="264dp"
+        android:layout_height="553dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="TextSizeCheck" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
