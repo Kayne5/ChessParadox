@@ -24,30 +24,38 @@ public abstract class Piece {
         this.chessBoard = chessBoard;
         this.col = col;
         this.row = row;
+        this.isWhite = isWhite;
+
+        // Initialize positions (will be updated properly in onSizeChanged)
         this.xPos = col * (chessBoard != null && chessBoard.tileSize > 0 ? chessBoard.tileSize : 100);
         this.yPos = row * (chessBoard != null && chessBoard.tileSize > 0 ? chessBoard.tileSize : 100);
-        this.isWhite = isWhite;
     }
 
-    public void draw(Canvas canvas, int tileSize) {
-        try {
-            if (canvas != null && sprite != null) {
-                canvas.drawBitmap(sprite, xPos, yPos, null);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error drawing piece: " + name, e);
+    public void draw(Canvas canvas) {
+        if (canvas != null && sprite != null) {
+            canvas.drawBitmap(sprite, xPos, yPos, null);
         }
     }
 
-    public void loadSprite(Context context, int resourceId, int tileSize) {
+    /**
+     * Load sprite with correct naming pattern matching the resource files
+     */
+    public void loadSprite(Context context, int tileSize) {
         try {
             if (context == null) {
                 Log.e(TAG, "Context is null when loading sprite");
                 return;
             }
 
+            // Match resource naming: white_pawn.png, black_knight.png, etc.
+            String colorPrefix = isWhite ? "white" : "black";
+            String resourceName = colorPrefix + "_" + name.toLowerCase();
+
+            int resourceId = context.getResources().getIdentifier(
+                    resourceName, "drawable", context.getPackageName());
+
             if (resourceId == 0) {
-                Log.e(TAG, "Invalid resource ID for piece: " + name);
+                Log.e(TAG, "Resource not found for: " + resourceName);
                 return;
             }
 
@@ -64,14 +72,16 @@ public abstract class Piece {
         }
     }
 
+    /**
+     * Check if the piece can move to the target position according to its movement pattern
+     */
     public abstract boolean isValidMovement(int col, int row);
 
+    /**
+     * Check if the piece's path to the target position is obstructed by other pieces
+     * Default implementation assumes no path checking needed (like Knight)
+     */
     public boolean moveCollidesWithPiece(int col, int row) {
         return false;
-    }
-
-    public void loadSprite(Context context, int tileSize) {
-        // This is a stub that should be overridden by subclasses
-        Log.w(TAG, "loadSprite not implemented for piece: " + name);
     }
 }

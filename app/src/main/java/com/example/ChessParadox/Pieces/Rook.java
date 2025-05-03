@@ -1,8 +1,5 @@
 package com.example.ChessParadox.Pieces;
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-
 import com.example.ChessParadox.Main.Chessboard;
 
 public class Rook extends Piece {
@@ -12,48 +9,34 @@ public class Rook extends Piece {
     }
 
     @Override
-    public void loadSprite(Context context, int tileSize) {
-        @SuppressLint("DiscouragedApi") int resourceId = isWhite ?
-                context.getResources().getIdentifier("rook_white", "drawable", context.getPackageName()) :
-                context.getResources().getIdentifier("rook_black", "drawable", context.getPackageName());
-
-        if (resourceId == 0) {
-            resourceId = android.R.drawable.btn_default;
-        }
-
-        super.loadSprite(context, resourceId, tileSize);
-    }
-
-    @Override
     public boolean isValidMovement(int col, int row) {
         return this.col == col || this.row == row;
     }
 
     @Override
     public boolean moveCollidesWithPiece(int col, int row) {
-        // left
-        if (this.col > col)
-            for (int c = this.col - 1; c > col; c--)
-                if (chessBoard.getPiece(c, this.row) != null)
-                    return true;
+        // Moving horizontally
+        if (this.row == row) {
+            int start = Math.min(this.col, col) + 1;
+            int end = Math.max(this.col, col);
 
-        // right
-        if (this.col < col)
-            for (int c = this.col + 1; c < col; c++)
-                if (chessBoard.getPiece(c, this.row) != null)
-                    return true;
+            for (int c = start; c < end; c++) {
+                if (chessBoard.getPiece(c, row) != null) {
+                    return true; // Path is blocked
+                }
+            }
+        }
+        // Moving vertically
+        else if (this.col == col) {
+            int start = Math.min(this.row, row) + 1;
+            int end = Math.max(this.row, row);
 
-        // up
-        if (this.row > row)
-            for (int r = this.row - 1; r > row; r--)
-                if (chessBoard.getPiece(this.col, r) != null)
-                    return true;
-
-        // down
-        if (this.row < row)
-            for (int r = this.row + 1; r < row; r++)
-                if (chessBoard.getPiece(this.col, r) != null)
-                    return true;
+            for (int r = start; r < end; r++) {
+                if (chessBoard.getPiece(col, r) != null) {
+                    return true; // Path is blocked
+                }
+            }
+        }
 
         return false;
     }
