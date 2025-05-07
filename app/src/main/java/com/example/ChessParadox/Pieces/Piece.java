@@ -16,6 +16,7 @@ public abstract class Piece {
     public boolean isWhite;
     public String name;
     public boolean isFirstMove = true;
+    public boolean hasMoved;
 
     protected Bitmap sprite;
     protected Chessboard chessBoard;
@@ -69,6 +70,16 @@ public abstract class Piece {
             original.recycle();
         } catch (Exception e) {
             Log.e(TAG, "Error loading sprite for piece: " + name, e);
+        }
+    }
+
+    /**
+     * Update the piece's visual position based on logical position
+     */
+    public void updateVisualPosition() {
+        if (chessBoard != null) {
+            this.xPos = this.col * chessBoard.tileSize;
+            this.yPos = this.row * chessBoard.tileSize;
         }
     }
 

@@ -32,6 +32,7 @@ public class Chessboardview extends View {
     private Paint lightTilePaint;
     private Paint darkTilePaint;
     private Paint highlightPaint;
+    private Paint selectedPiecePaint;  // New paint for highlighting selected piece
     private Paint textPaint;
 
     // Drag and drop
@@ -41,6 +42,7 @@ public class Chessboardview extends View {
     // Game logic
     private Chessboard chessBoard;
     public Piece selectedPiece;
+    private boolean pieceSelected = false;  // Track if a piece is selected for click-and-move
 
     public Chessboardview(Context context) {
         super(context);
@@ -68,6 +70,11 @@ public class Chessboardview extends View {
         highlightPaint = new Paint();
         highlightPaint.setColor(Color.parseColor("#a2e375"));
         highlightPaint.setAlpha(180);
+
+        // New paint for highlighting the selected piece
+        selectedPiecePaint = new Paint();
+        selectedPiecePaint.setColor(Color.parseColor("#55FF8800"));
+        selectedPiecePaint.setAlpha(180);
 
         textPaint = new Paint();
         textPaint.setColor(Color.BLACK);
@@ -157,6 +164,7 @@ public class Chessboardview extends View {
         isGameOver = false;
         gameResult = "";
         selectedPiece = null;
+        pieceSelected = false;
     }
 
     private void addPiece(Piece piece) {
@@ -169,6 +177,15 @@ public class Chessboardview extends View {
 
         // Draw the chess board
         drawBoard(canvas);
+
+        // Highlight the selected piece's square if using click-and-move
+        if (selectedPiece != null && pieceSelected && !draggingPiece) {
+            float left = selectedPiece.col * tileSize;
+            float top = selectedPiece.row * tileSize;
+            float right = left + tileSize;
+            float bottom = top + tileSize;
+            canvas.drawRect(left, top, right, bottom, selectedPiecePaint);
+        }
 
         // Draw highlights for valid moves if a piece is selected
         if (selectedPiece != null) {
@@ -265,95 +282,145 @@ public class Chessboardview extends View {
             return false;
         }
 
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                return handleTouchDown(col, row, event.getX(), event.getY());
-            case MotionEvent.ACTION_MOVE:
-                return handleTouchMove(event);
-            case MotionEvent.ACTION_UP:
-                return handleTouchUp(col, row);
-            default:
-                return false;
-        }
-    }
+        // Get the action
+        int action = event.getAction();
 
-    /**
-     * Handle the initial touch (piece selection)
-     */
-    private boolean handleTouchDown(int col, int row, float x, float y) {
         // Check if game is over
-        if (isGameOver) {
+        if (isGameOver && action == MotionEvent.ACTION_DOWN) {
             // Reset game if tapped after game over
             setupBoard();
             invalidate();
             return true;
         }
 
-        // Find the piece at the touch position
-        Piece piece = chessBoard.getPiece(col, row);
-
-        // Only select pieces of the current player's color
-        if (piece != null && piece.isWhite == isWhiteToMove) {
-            selectedPiece = piece;
-            draggingPiece = true;
-
-            // Center the piece on the touch point for more intuitive dragging
-            selectedPiece.xPos = (int)(x - tileSize / 2);
-            selectedPiece.yPos = (int)(y - tileSize / 2);
-
-            invalidate();
+        // Detect if this is a possible drag gesture or just a click
+        if (action == MotionEvent.ACTION_DOWN) {
+            touchX = event.getX();
+            touchY = event.getY();
             return true;
-        }
+        } else if (action == MotionEvent.ACTION_MOVE) {
+            // Only start dragging if the move is significant
+            float dx = Math.abs(event.getX() - touchX);
+            float dy = Math.abs(event.getY() - touchY);
 
-        return false;
-    }
+            if (dx > tileSize / 10 || dy > tileSize / 10) {
+                // User is dragging, so handle drag-and-drop
+                if (selectedPiece != null && !draggingPiece && pieceSelected) {
+                    draggingPiece = true;
+                    selectedPiece.xPos = (int)(event.getX() - tileSize / 2);
+                    selectedPiece.yPos = (int)(event.getY() - tileSize / 2);
+                    invalidate();
+                    return true;
+                }
 
-    /**
-     * Handle dragging of selected piece
-     */
-    private boolean handleTouchMove(MotionEvent event) {
-        if (selectedPiece != null && draggingPiece) {
-            // Update the visual position for dragging
-            selectedPiece.xPos = (int) (event.getX() - (tileSize / 2));
-            selectedPiece.yPos = (int) (event.getY() - (tileSize / 2));
-
-            invalidate();
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Handle releasing the piece (making a move)
-     */
-    private boolean handleTouchUp(int col, int row) {
-        if (selectedPiece != null && draggingPiece) {
-            draggingPiece = false;
-
-            // Create and validate the move
-            Move move = new Move(chessBoard, selectedPiece, col, row);
-            if (chessBoard.isValidMove(move)) {
-                // Make the move
-                chessBoard.makeMove(move);
-
-                // Switch turns
-                isWhiteToMove = !isWhiteToMove;
-
-                // Check for checkmate or stalemate
-                checkGameStatus();
-            } else {
-                // Invalid move, return piece to original position
-                selectedPiece.xPos = selectedPiece.col * tileSize;
-                selectedPiece.yPos = selectedPiece.row * tileSize;
+                // If no piece is selected yet, check if we should select one now
+                if (!pieceSelected && !draggingPiece) {
+                    Piece piece = chessBoard.getPiece((int)(touchX / tileSize), (int)(touchY / tileSize));
+                    if (piece != null && piece.isWhite == isWhiteToMove) {
+                        selectedPiece = piece;
+                        pieceSelected = true;
+                        draggingPiece = true;
+                        selectedPiece.xPos = (int)(event.getX() - tileSize / 2);
+                        selectedPiece.yPos = (int)(event.getY() - tileSize / 2);
+                        invalidate();
+                        return true;
+                    }
+                }
             }
 
-            selectedPiece = null;
-            invalidate();
-            return true;
+            if (draggingPiece) {
+                // Continue dragging
+                selectedPiece.xPos = (int)(event.getX() - tileSize / 2);
+                selectedPiece.yPos = (int)(event.getY() - tileSize / 2);
+                invalidate();
+                return true;
+            }
+        } else if (action == MotionEvent.ACTION_UP) {
+            // If we were dragging, handle the drop
+            if (draggingPiece) {
+                draggingPiece = false;
+                if (selectedPiece != null) {
+                    handleMove(col, row);
+                }
+                return true;
+            }
+
+            // If we weren't dragging, handle click-and-move interaction
+            if (!draggingPiece) {
+                handleClickAndMove(col, row);
+                return true;
+            }
         }
 
         return false;
+    }
+
+    /**
+     * Handle the click-and-move interaction
+     */
+    private void handleClickAndMove(int col, int row) {
+        Piece clickedPiece = chessBoard.getPiece(col, row);
+
+        // If no piece is selected and the user clicked a valid piece, select it
+        if (!pieceSelected && clickedPiece != null && clickedPiece.isWhite == isWhiteToMove) {
+            selectedPiece = clickedPiece;
+            pieceSelected = true;
+            invalidate();
+            return;
+        }
+
+        // If a piece is already selected
+        if (pieceSelected && selectedPiece != null) {
+            // If the user clicked on another of their pieces, switch selection
+            if (clickedPiece != null && clickedPiece.isWhite == isWhiteToMove) {
+                selectedPiece = clickedPiece;
+                invalidate();
+                return;
+            }
+
+            // Otherwise, try to move to the clicked square
+            handleMove(col, row);
+        }
+    }
+
+    /**
+     * Attempt to move the selected piece to the specified position
+     */
+    private void handleMove(int col, int row) {
+        // Create and validate the move
+        Move move = new Move(chessBoard, selectedPiece, col, row);
+        if (chessBoard.isValidMove(move)) {
+            // Make the move
+            chessBoard.makeMove(move);
+
+            // Update the visual position of all pieces
+            updatePiecesVisualPosition();
+
+            // Switch turns
+            isWhiteToMove = !isWhiteToMove;
+
+            // Check for checkmate or stalemate
+            checkGameStatus();
+        } else {
+            // Invalid move, return piece to original position
+            selectedPiece.xPos = selectedPiece.col * tileSize;
+            selectedPiece.yPos = selectedPiece.row * tileSize;
+        }
+
+        // Reset selection
+        selectedPiece = null;
+        pieceSelected = false;
+        invalidate();
+    }
+
+    /**
+     * Update the visual position (xPos, yPos) of all pieces based on their logical position (col, row)
+     */
+    private void updatePiecesVisualPosition() {
+        for (Piece piece : pieceList) {
+            piece.xPos = piece.col * tileSize;
+            piece.yPos = piece.row * tileSize;
+        }
     }
 
     /**
@@ -381,6 +448,6 @@ public class Chessboardview extends View {
     }
 
     public int getTileSize() {
-        return 0;
+        return tileSize;
     }
 }

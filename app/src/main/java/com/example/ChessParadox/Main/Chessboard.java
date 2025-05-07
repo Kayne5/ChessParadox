@@ -124,6 +124,11 @@ public class Chessboard {
             if (wouldBeInCheck(new Move(this, move.piece, 5, row))) {
                 return false;
             }
+
+            // Check if king is in check
+            if (wouldBeInCheck(new Move(this, move.piece, move.piece.col, move.piece.row))) {
+                return false;
+            }
         }
         // Queenside castling
         else if (move.newCol == 2) {
@@ -139,6 +144,11 @@ public class Chessboard {
 
             // Check if king passes through check
             if (wouldBeInCheck(new Move(this, move.piece, 3, row))) {
+                return false;
+            }
+
+            // Check if king is in check
+            if (wouldBeInCheck(new Move(this, move.piece, move.piece.col, move.piece.row))) {
                 return false;
             }
         }
@@ -173,27 +183,64 @@ public class Chessboard {
         int originalCol = originalPiece.col;
         int originalRow = originalPiece.row;
 
-        // Temporarily make the move
-        originalPiece.col = move.newCol;
-        originalPiece.row = move.newRow;
+        // Keep track of captured pieces to restore later
+        Piece capturedPiece = null;
+        Piece enPassantCapturedPiece = null;
+        boolean wasEnPassantCapture = false;
 
-        // Store the captured piece (if any)
-        Piece capturedPiece = getPiece(move.newCol, move.newRow);
-        if (capturedPiece != null) {
-            pieceList.remove(capturedPiece);
+        try {
+            // Check for en passant capture to handle specially
+            if (originalPiece.name.equals("Pawn") &&
+                    originalPiece.col != move.newCol &&
+                    getPiece(move.newCol, move.newRow) == null &&
+                    getTileNum(move.newCol, move.newRow) == enPassantTile) {
+
+                int colorVal = originalPiece.isWhite ? -1 : 1;
+                enPassantCapturedPiece = getPiece(move.newCol, move.newRow + colorVal);
+
+                if (enPassantCapturedPiece != null) {
+                    pieceList.remove(enPassantCapturedPiece);
+                    wasEnPassantCapture = true;
+                }
+            }
+
+            // Handle normal capture
+            capturedPiece = getPiece(move.newCol, move.newRow);
+            if (capturedPiece != null) {
+                pieceList.remove(capturedPiece);
+            }
+
+            // Temporarily move the piece
+            originalPiece.col = move.newCol;
+            originalPiece.row = move.newRow;
+
+            // Find the king of the same color as the moving piece
+            Piece king = findKing(originalPiece.isWhite);
+
+            // Check if the king is in check after the move
+            boolean inCheck = false;
+            if (king != null) {
+                Move kingMove = new Move(this, king, king.col, king.row);
+                inCheck = getCheckScanner().isKingInCheck(kingMove);
+            }
+
+            return inCheck;
+        } finally {
+            // Restore the original state no matter what
+            originalPiece.col = originalCol;
+            originalPiece.row = originalRow;
+
+            // Add back any captured pieces
+            if (capturedPiece != null && !pieceList.contains(capturedPiece)) {
+                pieceList.add(capturedPiece);
+            }
+
+            // Add back en passant captured pawn if it was removed
+            if (wasEnPassantCapture && enPassantCapturedPiece != null &&
+                    !pieceList.contains(enPassantCapturedPiece)) {
+                pieceList.add(enPassantCapturedPiece);
+            }
         }
-
-        // Check if the king is in check after the move
-        boolean inCheck = getCheckScanner().isKingInCheck(move);
-
-        // Restore the original state
-        originalPiece.col = originalCol;
-        originalPiece.row = originalRow;
-        if (capturedPiece != null) {
-            pieceList.add(capturedPiece);
-        }
-
-        return inCheck;
     }
 
     /**
@@ -270,6 +317,7 @@ public class Chessboard {
                 if (rook != null) {
                     rook.col = 5;
                     rook.isFirstMove = false;
+                    rook.updateVisualPosition(); // Update rook visual position
                 }
             }
             // Queenside castling
@@ -278,6 +326,7 @@ public class Chessboard {
                 if (rook != null) {
                     rook.col = 3;
                     rook.isFirstMove = false;
+                    rook.updateVisualPosition(); // Update rook visual position
                 }
             }
         }
@@ -292,6 +341,9 @@ public class Chessboard {
         move.piece.col = move.newCol;
         move.piece.row = move.newRow;
         move.piece.isFirstMove = false;
+
+        // Update the visual position of the moved piece
+        move.piece.updateVisualPosition();
 
         // Check for pawn promotion
         if (move.piece.name.equals("Pawn")) {
@@ -318,5 +370,21 @@ public class Chessboard {
         // This would be implemented with factory method to create the new piece
         // For now, just change the name for simplicity
         pawn.name = newPieceName;
+
+        // Reload sprite with new piece type if the view exists
+        if (view != null && view.getContext() != null) {
+            pawn.loadSprite(view.getContext(), tileSize);
+        }
+    }
+
+    /**
+     * Update the visual position of all pieces
+     */
+    public void updateAllPiecesVisualPosition() {
+        for (Piece piece : pieceList) {
+            if (piece != null) {
+                piece.updateVisualPosition();
+            }
+        }
     }
 }

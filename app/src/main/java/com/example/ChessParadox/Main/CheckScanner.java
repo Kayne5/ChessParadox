@@ -23,7 +23,7 @@ public class CheckScanner {
         // Get king position, accounting for if the king is the piece being moved
         int kingCol = king.col;
         int kingRow = king.row;
-        if (move.piece.name.equals("King")) {
+        if (move.piece.name.equals("King") && move.piece == king) {
             kingCol = move.newCol;
             kingRow = move.newRow;
         }
@@ -54,8 +54,20 @@ public class CheckScanner {
                 // Stop at board edge
                 if (col < 0 || col > 7 || row < 0 || row > 7) break;
 
-                // Skip the destination of the current move
-                if (col == move.newCol && row == move.newRow) continue;
+                // Need to consider the new position in the temporary move
+                if (col == move.newCol && row == move.newRow) {
+                    // If we're capturing a piece, stop here
+                    if (move.piece.isWhite != king.isWhite) {
+                        break;
+                    }
+                    // If it's our piece moving here, it will block this attack vector
+                    else {
+                        continue;
+                    }
+                }
+
+                // Skip the original position of our moving piece
+                if (move.piece != king && col == move.piece.col && row == move.piece.row) continue;
 
                 Piece piece = chessBoard.getPiece(col, row);
                 if (piece != null) {
@@ -88,8 +100,20 @@ public class CheckScanner {
                 // Stop at board edge
                 if (col < 0 || col > 7 || row < 0 || row > 7) break;
 
-                // Skip the destination of the current move
-                if (col == move.newCol && row == move.newRow) continue;
+                // Need to consider the new position in the temporary move
+                if (col == move.newCol && row == move.newRow) {
+                    // If we're capturing a piece, stop here
+                    if (move.piece.isWhite != king.isWhite) {
+                        break;
+                    }
+                    // If it's our piece moving here, it will block this attack vector
+                    else {
+                        continue;
+                    }
+                }
+
+                // Skip the original position of our moving piece
+                if (move.piece != king && col == move.piece.col && row == move.piece.row) continue;
 
                 Piece piece = chessBoard.getPiece(col, row);
                 if (piece != null) {
@@ -116,9 +140,14 @@ public class CheckScanner {
             int col = kingCol + km[0];
             int row = kingRow + km[1];
 
-            // Skip if off board or is the current move destination
-            if (col < 0 || col > 7 || row < 0 || row > 7 ||
-                    (col == move.newCol && row == move.newRow)) continue;
+            // Skip if off board
+            if (col < 0 || col > 7 || row < 0 || row > 7) continue;
+
+            // Skip the destination of the current move if it's our piece
+            if (col == move.newCol && row == move.newRow && move.piece.isWhite == king.isWhite) continue;
+
+            // Skip the original position of our moving piece
+            if (move.piece != king && col == move.piece.col && row == move.piece.row) continue;
 
             Piece piece = chessBoard.getPiece(col, row);
             if (piece != null && !chessBoard.sameTeam(piece, king) && piece.name.equals("Knight")) {
@@ -141,9 +170,14 @@ public class CheckScanner {
             int col = kingCol + pc[0];
             int row = kingRow + pc[1];
 
-            // Skip if off board or is the current move destination
-            if (col < 0 || col > 7 || row < 0 || row > 7 ||
-                    (col == move.newCol && row == move.newRow)) continue;
+            // Skip if off board
+            if (col < 0 || col > 7 || row < 0 || row > 7) continue;
+
+            // Skip the destination of the current move if it's our piece
+            if (col == move.newCol && row == move.newRow && move.piece.isWhite == king.isWhite) continue;
+
+            // Skip the original position of our moving piece
+            if (move.piece != king && col == move.piece.col && row == move.piece.row) continue;
 
             Piece piece = chessBoard.getPiece(col, row);
             if (piece != null && !chessBoard.sameTeam(piece, king) && piece.name.equals("Pawn")) {
@@ -165,9 +199,14 @@ public class CheckScanner {
                 int col = kingCol + c;
                 int row = kingRow + r;
 
-                // Skip if off board or is the current move destination
-                if (col < 0 || col > 7 || row < 0 || row > 7 ||
-                        (col == move.newCol && row == move.newRow)) continue;
+                // Skip if off board
+                if (col < 0 || col > 7 || row < 0 || row > 7) continue;
+
+                // Skip the destination of the current move if it's our piece
+                if (col == move.newCol && row == move.newRow && move.piece.isWhite == king.isWhite) continue;
+
+                // Skip the original position of our moving piece
+                if (move.piece != king && col == move.piece.col && row == move.piece.row) continue;
 
                 Piece piece = chessBoard.getPiece(col, row);
                 if (piece != null && !chessBoard.sameTeam(piece, king) && piece.name.equals("King")) {
@@ -182,14 +221,17 @@ public class CheckScanner {
      * Determines if the game is over (checkmate or stalemate)
      */
     public boolean isGameOver(Piece king) {
-        // Check if any piece of the same color as the king can make a valid move
+        if (king == null) return false;
+
+        // Check if any piece of the same color as the king can make a valid move to prevent checkmate
         for (Piece piece : chessBoard.pieceList) {
             if (chessBoard.sameTeam(piece, king)) {
                 for (int row = 0; row < 8; row++) {
                     for (int col = 0; col < 8; col++) {
                         Move move = new Move(chessBoard, piece, col, row);
                         if (chessBoard.isValidMove(move)) {
-                            return false; // Valid move found, game is not over
+                            // Valid move found, game is not over
+                            return false;
                         }
                     }
                 }
