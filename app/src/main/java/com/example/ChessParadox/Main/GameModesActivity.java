@@ -1,4 +1,4 @@
-package com.example.ChessParadox.Classic;
+package com.example.ChessParadox.Main;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -8,7 +8,6 @@ import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.ChessParadox.Main.MainActivity;
 import com.example.ChessParadox.R;
 
 /**

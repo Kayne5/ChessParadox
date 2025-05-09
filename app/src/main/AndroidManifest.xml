@@ -25,7 +25,7 @@
 
         <!-- Game Modes Activity -->
         <activity
-            android:name=".Classic.GameModesActivity"
+            android:name=".Main.GameModesActivity"
             android:exported="false">
         </activity>
 

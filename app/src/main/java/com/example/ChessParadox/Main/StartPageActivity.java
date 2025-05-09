@@ -7,7 +7,6 @@ import android.view.WindowManager;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.ChessParadox.Classic.GameModesActivity;
 import com.example.ChessParadox.R;
 
 /**
