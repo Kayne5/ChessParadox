@@ -30,9 +30,26 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="10dp">
 
             <!-- Classic Chess Mode -->
+
+            <ImageView
+                android:id="@+id/imageView3"
+                android:layout_width="wrap_content"
+                android:layout_height="114dp"
+                android:layout_gravity="center"
+                app:srcCompat="@drawable/black_rook" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CHESS PARADOX"
+                android:layout_gravity="center"
+                android:textColor="@android:color/black"
+                android:textSize="20sp"
+                android:layout_marginBottom="30dp"
+                android:textStyle="bold" />
+
             <LinearLayout
                 android:id="@+id/classicChessContainer"
                 android:layout_width="match_parent"
@@ -40,7 +57,7 @@
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/game_mode_background"
                 android:orientation="horizontal"
-                android:padding="12dp">
+                android:padding="10dp">
 
                 <ImageView
                     android:layout_width="120dp"
@@ -51,7 +68,8 @@
 
                 <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="122dp"
+                    android:layout_height="113dp"
+                    android:layout_margin="10dp"
                     android:layout_marginStart="12dp"
                     android:layout_weight="1"
                     android:orientation="vertical">
@@ -60,6 +78,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Classic Chess"
+                        android:layout_marginBottom="5dp"
                         android:textColor="#5D4037"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -67,6 +86,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
                         android:text="Traditional chess game"
                         android:textColor="#5D4037"
                         android:textSize="12sp" />
@@ -97,7 +117,7 @@
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/game_mode_background"
                 android:orientation="horizontal"
-                android:padding="12dp">
+                android:padding="10dp">
 
                 <ImageView
                     android:layout_width="120dp"
@@ -110,6 +130,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
+                    android:layout_margin="10dp"
                     android:layout_weight="1"
                     android:orientation="vertical">
 
@@ -153,7 +174,7 @@
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/game_mode_background"
                 android:orientation="horizontal"
-                android:padding="12dp">
+                android:padding="10dp">
 
                 <ImageView
                     android:layout_width="120dp"
@@ -165,6 +186,7 @@
                 <LinearLayout
                     android:layout_width="228dp"
                     android:layout_height="94dp"
+                    android:layout_margin="10dp"
                     android:layout_marginStart="10dp"
                     android:layout_weight="1"
                     android:orientation="vertical">
