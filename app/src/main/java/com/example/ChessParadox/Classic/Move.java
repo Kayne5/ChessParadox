@@ -1,4 +1,4 @@
-package com.example.ChessParadox.Main;
+package com.example.ChessParadox.Classic;
 
 import com.example.ChessParadox.Pieces.Piece;
 

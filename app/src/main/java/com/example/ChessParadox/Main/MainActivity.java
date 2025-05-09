@@ -6,6 +6,7 @@ import android.view.WindowManager;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.ChessParadox.Classic.Chessboardview;
 import com.example.ChessParadox.R;
 
 /**

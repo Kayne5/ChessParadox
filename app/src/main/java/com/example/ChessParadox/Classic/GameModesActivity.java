@@ -1,14 +1,14 @@
-package com.example.ChessParadox.Main;
+package com.example.ChessParadox.Classic;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.ChessParadox.Main.MainActivity;
 import com.example.ChessParadox.R;
 
 /**
