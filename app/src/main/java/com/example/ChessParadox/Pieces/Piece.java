@@ -6,7 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.util.Log;
 
-import com.example.ChessParadox.Main.Chessboard;
+import com.example.ChessParadox.Classic.Chessboard;
 
 public abstract class Piece {
     private static final String TAG = "Piece";

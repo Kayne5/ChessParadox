@@ -1,6 +1,6 @@
 package com.example.ChessParadox.Pieces;
 
-import com.example.ChessParadox.Main.Chessboard;
+import com.example.ChessParadox.Classic.Chessboard;
 
 public class Queen extends Piece {
     private final Rook rookMovement;

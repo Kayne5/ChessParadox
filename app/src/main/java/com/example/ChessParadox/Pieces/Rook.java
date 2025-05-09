@@ -1,6 +1,6 @@
 package com.example.ChessParadox.Pieces;
 
-import com.example.ChessParadox.Main.Chessboard;
+import com.example.ChessParadox.Classic.Chessboard;
 
 public class Rook extends Piece {
     public Rook(Chessboard chessBoard, int col, int row, boolean isWhite) {

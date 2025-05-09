@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".Main.MainActivity">
 
-    <com.example.ChessParadox.Main.Chessboardview
+    <com.example.ChessParadox.Classic.Chessboardview
         android:id="@+id/chessboardview"
         android:layout_width="0dp"
         android:layout_height="0dp"
