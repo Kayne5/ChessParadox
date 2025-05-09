@@ -15,6 +15,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "ChessApp";
     private Chessboardview chessboardview;
+    private String gameMode = "CLASSIC"; // Default game mode
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,12 +30,23 @@ public class MainActivity extends AppCompatActivity {
 
             setContentView(R.layout.activity_main);
 
+            // Get the game mode from the intent if available
+            if (getIntent().hasExtra("GAME_MODE")) {
+                gameMode = getIntent().getStringExtra("GAME_MODE");
+            }
+
+            Log.d(TAG, "Starting game with mode: " + gameMode);
+
             // Find and initialize the chess board view
             chessboardview = findViewById(R.id.chessboardview);
 
             if (chessboardview == null) {
                 throw new IllegalStateException("Chessboard view not found in layout");
             }
+
+            // Initialize the chessboard with the selected game mode
+            // This assumes you have a method in Chessboardview to set the game mode
+            // chessboardview.setGameMode(gameMode);
 
             Log.d(TAG, "Chess game initialized successfully");
         } catch (Exception e) {
