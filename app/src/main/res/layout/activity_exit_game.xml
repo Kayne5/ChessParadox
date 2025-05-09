@@ -1,30 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_standard">
 
+    <!-- Background -->
+
+    <!-- Exit Message -->
+
+    <ImageView
+        android:id="@+id/dialogBackground"
+        android:layout_width="342dp"
+        android:layout_height="160dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:adjustViewBounds="true"
+        android:contentDescription="Dialog background"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.4"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.383"
+        app:layout_constraintWidth_max="350dp"
+        app:srcCompat="@drawable/game_mode_background" />
+
+    <TextView
+        android:id="@+id/exit_message"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:gravity="center"
+        android:text="Are you sure you want to exit the game?"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/buttonsContainer"
+        app:layout_constraintEnd_toEndOf="@+id/dialogBackground"
+        app:layout_constraintStart_toStartOf="@+id/dialogBackground"
+        app:layout_constraintTop_toTopOf="@+id/dialogBackground"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <!-- Buttons Container -->
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:id="@+id/buttonsContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="24dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="@+id/dialogBackground"
+        app:layout_constraintEnd_toEndOf="@+id/dialogBackground"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@+id/dialogBackground"
+        app:layout_constraintTop_toBottomOf="@+id/exit_message">
 
+        <!-- No Button -->
+        <Button
+            android:id="@+id/no_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:text="No"
+            android:textSize="16sp" />
+
+        <!-- Yes Button -->
+        <Button
+            android:id="@+id/yes_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="Yes"
+            android:textSize="16sp" />
     </LinearLayout>
-
-    <Button
-        android:id="@+id/no_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="No"
-        tools:layout_editor_absoluteX="92dp"
-        tools:layout_editor_absoluteY="421dp" />
-
-    <Button
-        android:id="@+id/yes_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Yes"
-        tools:layout_editor_absoluteX="211dp"
-        tools:layout_editor_absoluteY="421dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
