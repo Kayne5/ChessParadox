@@ -1,10 +1,13 @@
 package com.example.ChessParadox.Main;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -57,5 +60,64 @@ public class GameModesActivity extends AppCompatActivity {
             intent.putExtra("GAME_MODE", "FOG_OF_WAR");
             startActivity(intent);
         });
+
+        // Set up info icons to show game mode descriptions
+        setupInfoIcons();
+    }
+
+    /**
+     * Sets up click listeners for all info icons in the game modes screen
+     */
+    private void setupInfoIcons() {
+        // Find all the LinearLayout containers
+        View classicChessContainer = findViewById(R.id.classicChessContainer);
+        View twoStepsContainer = findViewById(R.id.twoStepsContainer);
+        View fogOfWarContainer = findViewById(R.id.fogOfWarContainer);
+
+        // Find the info icons in each container (last child of each LinearLayout)
+        ImageView classicInfoIcon = (ImageView) ((android.view.ViewGroup) classicChessContainer).getChildAt(2);
+        ImageView twoStepsInfoIcon = (ImageView) ((android.view.ViewGroup) twoStepsContainer).getChildAt(2);
+        ImageView fogOfWarInfoIcon = (ImageView) ((android.view.ViewGroup) fogOfWarContainer).getChildAt(2);
+
+        // Set up click listeners
+        classicInfoIcon.setOnClickListener(v -> showInfoDialog("Classic Chess",
+                "Traditional chess game following standard rules. Play against the computer AI with " +
+                        "adjustable difficulty levels. Perfect for both beginners and experienced players " +
+                        "who want to improve their chess skills."));
+
+        twoStepsInfoIcon.setOnClickListener(v -> showInfoDialog("Two-steps ahead",
+                "A tactical challenge mode where you need to find the best move in a given position. " +
+                        "The computer will analyze your move and provide feedback. This mode helps you " +
+                        "improve your strategic thinking and calculation abilities."));
+
+        fogOfWarInfoIcon.setOnClickListener(v -> showInfoDialog("Fog of War",
+                "An exciting variant where enemy pieces are only visible when they are in range of your " +
+                        "pieces. This creates a thrilling gameplay experience that tests your memory and " +
+                        "intuition. Be careful - danger could be lurking just out of sight!"));
+    }
+
+    /**
+     * Shows a dialog with information about the selected game mode
+     * @param title The game mode title
+     * @param description Detailed description of the game mode
+     */
+    private void showInfoDialog(String title, String description) {
+        // Create custom dialog
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_game_info);
+
+        // Set dialog title and description
+        TextView titleText = dialog.findViewById(R.id.dialogTitle);
+        TextView descriptionText = dialog.findViewById(R.id.dialogDescription);
+
+        titleText.setText(title);
+        descriptionText.setText(description);
+
+        // Set up close button
+        Button closeButton = dialog.findViewById(R.id.dialogCloseButton);
+        closeButton.setOnClickListener(v -> dialog.dismiss());
+
+        // Show dialog
+        dialog.show();
     }
 }
