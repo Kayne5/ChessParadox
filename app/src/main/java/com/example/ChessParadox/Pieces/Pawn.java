@@ -1,10 +1,6 @@
-// Pawn.java
 package com.example.ChessParadox.Pieces;
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-
-import com.example.ChessParadox.Main.Chessboard;
+import com.example.ChessParadox.Classic.Chessboard;
 
 public class Pawn extends Piece {
     public Pawn(Chessboard chessBoard, int col, int row, boolean isWhite) {
@@ -13,53 +9,40 @@ public class Pawn extends Piece {
     }
 
     @Override
-    public void loadSprite(Context context, int tileSize) {
-        @SuppressLint("DiscouragedApi") int resourceId = isWhite ?
-                context.getResources().getIdentifier("pawn_white", "drawable", context.getPackageName()) :
-                context.getResources().getIdentifier("pawn_black", "drawable", context.getPackageName());
+    public boolean isValidMovement(int col, int row) {
+        // Direction depends on color (white moves up, black moves down)
+        int colorDir = isWhite ? -1 : 1;
 
-        if (resourceId == 0) {
-            resourceId = android.R.drawable.btn_default;
+        // Forward one square
+        if (this.col == col && row == this.row + colorDir) {
+            return chessBoard.getPiece(col, row) == null;
         }
 
-        super.loadSprite(context, resourceId, tileSize);
+        // Forward two squares on first move
+        if (isFirstMove && this.col == col && row == this.row + (2 * colorDir)) {
+            // Check both squares are empty
+            return chessBoard.getPiece(col, this.row + colorDir) == null &&
+                    chessBoard.getPiece(col, row) == null;
+        }
+
+        // Diagonal captures
+        if ((col == this.col - 1 || col == this.col + 1) && row == this.row + colorDir) {
+            // Regular capture
+            Piece targetPiece = chessBoard.getPiece(col, row);
+            if (targetPiece != null) {
+                return !chessBoard.sameTeam(this, targetPiece);
+            }
+
+            // En passant capture
+            return chessBoard.getTileNum(col, row) == chessBoard.enPassantTile;
+        }
+
+        return false;
     }
 
     @Override
-    public boolean isValidMovement(int col, int row) {
-        int colorIndex = isWhite ? 1 : -1;
-
-        // push pawn 1
-        if (this.col == col && row == this.row - colorIndex && chessBoard.getPiece(col, row) == null)
-            return true;
-
-        // push pawn 2
-        if (isFirstMove && this.col == col && row == this.row - colorIndex * 2 &&
-                chessBoard.getPiece(col, row) == null && chessBoard.getPiece(col, row + colorIndex) == null)
-            return true;
-
-        // capture left
-        if (col == this.col - 1 && row == this.row - colorIndex && chessBoard.getPiece(col, row) != null)
-            return true;
-
-        // capture right
-        if (col == this.col + 1 && row == this.row - colorIndex && chessBoard.getPiece(col, row) != null)
-            return true;
-
-        // en passant left
-        if (chessBoard.getTileNum(col, row) == chessBoard.enPassantTile &&
-                col == this.col - 1 && row == this.row - colorIndex &&
-                chessBoard.getPiece(col, row + colorIndex) != null) {
-            return true;
-        }
-
-        // en passant right
-        if (chessBoard.getTileNum(col, row) == chessBoard.enPassantTile &&
-                col == this.col + 1 && row == this.row - colorIndex &&
-                chessBoard.getPiece(col, row + colorIndex) != null) {
-            return true;
-        }
-
+    public boolean moveCollidesWithPiece(int col, int row) {
+        // Collision detection for pawns is handled in isValidMovement
         return false;
     }
 }
