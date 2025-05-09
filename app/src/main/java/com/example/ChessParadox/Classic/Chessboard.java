@@ -1,6 +1,12 @@
 package com.example.ChessParadox.Classic;
 
+import com.example.ChessParadox.Pieces.Bishop;
+import com.example.ChessParadox.Pieces.Knight;
+import com.example.ChessParadox.Pieces.Pawn;
 import com.example.ChessParadox.Pieces.Piece;
+import com.example.ChessParadox.Pieces.Queen;
+import com.example.ChessParadox.Pieces.Rook;
+
 import java.util.ArrayList;
 
 /**
@@ -85,14 +91,6 @@ public class Chessboard {
             }
         }
 
-        // Special case for en passant with pawns
-        if (move.piece.name.equals("Pawn")) {
-            // Handle en passant capture
-            if (move.piece.col != move.newCol && getPiece(move.newCol, move.newRow) == null) {
-                return isEnPassantValid(move);
-            }
-        }
-
         // Check if this move would put/leave the king in check
         return !wouldBeInCheck(move);
     }
@@ -157,24 +155,6 @@ public class Chessboard {
     }
 
     /**
-     * Determine if en passant capture is valid
-     */
-    private boolean isEnPassantValid(Move move) {
-        int colorVal = move.piece.isWhite ? -1 : 1;
-
-        // Check if the target square is the recorded en passant tile
-        if (getTileNum(move.newCol, move.newRow) == enPassantTile) {
-            // Check if there's an enemy pawn in the adjacent square
-            Piece pawnToCapture = getPiece(move.newCol, move.newRow + colorVal);
-            return pawnToCapture != null &&
-                    pawnToCapture.name.equals("Pawn") &&
-                    !sameTeam(move.piece, pawnToCapture);
-        }
-
-        return false;
-    }
-
-    /**
      * Check if a move would put/leave the king in check
      */
     private boolean wouldBeInCheck(Move move) {
@@ -186,21 +166,28 @@ public class Chessboard {
         // Keep track of captured pieces to restore later
         Piece capturedPiece = null;
         Piece enPassantCapturedPiece = null;
-        boolean wasEnPassantCapture = false;
+        int originalEnPassantTile = enPassantTile;  // Save original en passant state
+
+        // Save all pawns' justMovedTwoSquares state
+        boolean[] pawnTwoSquareStates = new boolean[pieceList.size()];
+        int pawnIndex = 0;
+        for (Piece piece : pieceList) {
+            if (piece.name.equals("Pawn") && piece instanceof Pawn) {
+                pawnTwoSquareStates[pawnIndex++] = ((Pawn)piece).justMovedTwoSquares;
+            }
+        }
 
         try {
-            // Check for en passant capture to handle specially
+            // Check if this is an en passant capture
             if (originalPiece.name.equals("Pawn") &&
-                    originalPiece.col != move.newCol &&
+                    originalCol != move.newCol &&
                     getPiece(move.newCol, move.newRow) == null &&
                     getTileNum(move.newCol, move.newRow) == enPassantTile) {
 
-                int colorVal = originalPiece.isWhite ? -1 : 1;
-                enPassantCapturedPiece = getPiece(move.newCol, move.newRow + colorVal);
-
+                // For en passant, capture the pawn on the same row as the capturing pawn
+                enPassantCapturedPiece = getPiece(move.newCol, originalRow);
                 if (enPassantCapturedPiece != null) {
                     pieceList.remove(enPassantCapturedPiece);
-                    wasEnPassantCapture = true;
                 }
             }
 
@@ -213,6 +200,25 @@ public class Chessboard {
             // Temporarily move the piece
             originalPiece.col = move.newCol;
             originalPiece.row = move.newRow;
+
+            // Update en passant opportunity for the simulation
+            // If this is a pawn moving two squares, set the en passant tile
+            if (originalPiece.name.equals("Pawn") && Math.abs(move.newRow - originalRow) == 2) {
+                int direction = originalPiece.isWhite ? -1 : 1;
+                enPassantTile = getTileNum(move.newCol, move.newRow + direction);
+                if (originalPiece instanceof Pawn) {
+                    ((Pawn)originalPiece).justMovedTwoSquares = true;
+                }
+            } else {
+                // Reset en passant opportunity for any other move
+                enPassantTile = -1;
+                // Reset all other pawns' justMovedTwoSquares flag
+                for (Piece piece : pieceList) {
+                    if (piece.name.equals("Pawn") && piece instanceof Pawn) {
+                        ((Pawn)piece).justMovedTwoSquares = false;
+                    }
+                }
+            }
 
             // Find the king of the same color as the moving piece
             Piece king = findKing(originalPiece.isWhite);
@@ -229,6 +235,17 @@ public class Chessboard {
             // Restore the original state no matter what
             originalPiece.col = originalCol;
             originalPiece.row = originalRow;
+            enPassantTile = originalEnPassantTile;  // Restore original en passant state
+
+            // Restore all pawns' justMovedTwoSquares state
+            pawnIndex = 0;
+            for (Piece piece : pieceList) {
+                if (piece.name.equals("Pawn") && piece instanceof Pawn) {
+                    if (pawnIndex < pawnTwoSquareStates.length) {
+                        ((Pawn)piece).justMovedTwoSquares = pawnTwoSquareStates[pawnIndex++];
+                    }
+                }
+            }
 
             // Add back any captured pieces
             if (capturedPiece != null && !pieceList.contains(capturedPiece)) {
@@ -236,8 +253,7 @@ public class Chessboard {
             }
 
             // Add back en passant captured pawn if it was removed
-            if (wasEnPassantCapture && enPassantCapturedPiece != null &&
-                    !pieceList.contains(enPassantCapturedPiece)) {
+            if (enPassantCapturedPiece != null && !pieceList.contains(enPassantCapturedPiece)) {
                 pieceList.add(enPassantCapturedPiece);
             }
         }
@@ -289,24 +305,44 @@ public class Chessboard {
         int oldCol = move.piece.col;
         int oldRow = move.piece.row;
 
-        // Update en passant opportunities
-        if (move.piece.name.equals("Pawn") && Math.abs(move.piece.row - move.newRow) == 2) {
-            // Set en passant square behind the pawn
-            int direction = move.piece.isWhite ? 1 : -1;
-            enPassantTile = getTileNum(move.newCol, move.newRow + direction);
-        } else {
-            enPassantTile = -1; // Reset en passant
+        // Reset "justMovedTwoSquares" flag for all pawns before making a new move
+        for (Piece piece : pieceList) {
+            if (piece.name.equals("Pawn") && piece instanceof Pawn) {
+                ((Pawn)piece).justMovedTwoSquares = false;
+            }
         }
 
         // Handle en passant capture
-        if (move.piece.name.equals("Pawn") && move.piece.col != move.newCol &&
+        if (move.piece.name.equals("Pawn") &&
+                oldCol != move.newCol &&
                 getPiece(move.newCol, move.newRow) == null) {
-            // Remove the captured pawn
-            int captureRow = move.piece.row;
-            Piece capturedPawn = getPiece(move.newCol, captureRow);
-            if (capturedPawn != null) {
-                pieceList.remove(capturedPawn);
+            // Check if this is an en passant capture
+            int enPassantTile = getTileNum(move.newCol, move.newRow);
+            if (enPassantTile == this.enPassantTile) {
+                // For en passant, the captured pawn is on the same row as the capturing pawn
+                // but on the target column
+                Piece capturedPawn = getPiece(move.newCol, oldRow);
+                if (capturedPawn != null && capturedPawn.name.equals("Pawn")) {
+                    pieceList.remove(capturedPawn);
+                }
             }
+        }
+
+        // Update en passant opportunities
+        if (move.piece.name.equals("Pawn")) {
+            // If a pawn moves two squares, set the en passant tile and flag
+            if (Math.abs(move.newRow - oldRow) == 2) {
+                int direction = move.piece.isWhite ? -1 : 1;
+                enPassantTile = getTileNum(move.newCol, move.newRow + direction);
+                if (move.piece instanceof Pawn) {
+                    ((Pawn)move.piece).justMovedTwoSquares = true;
+                }
+            } else {
+                enPassantTile = -1;
+            }
+        } else {
+            // Reset en passant opportunity for any non-pawn move
+            enPassantTile = -1;
         }
 
         // Handle castling
@@ -341,6 +377,7 @@ public class Chessboard {
         move.piece.col = move.newCol;
         move.piece.row = move.newRow;
         move.piece.isFirstMove = false;
+        move.piece.hasMoved = true;
 
         // Update the visual position of the moved piece
         move.piece.updateVisualPosition();
@@ -357,9 +394,20 @@ public class Chessboard {
     private void checkPawnPromotion(Piece pawn) {
         // Check if pawn has reached the opposite end
         if ((pawn.isWhite && pawn.row == 0) || (!pawn.isWhite && pawn.row == 7)) {
-            // For simplicity, auto-promote to Queen
-            // In a full implementation, you'd show a dialog to let the player choose
-            promotePawn(pawn, "Queen");
+            // We have a pawn promotion situation
+            if (view != null && view.getContext() != null) {
+                // Show promotion dialog
+                PawnPromotionDialog dialog = new PawnPromotionDialog(
+                        view.getContext(),
+                        pawn,
+                        this,
+                        pieceType -> promotePawn(pawn, pieceType)
+                );
+                dialog.show();
+            } else {
+                // Fallback to auto-promote to Queen if view isn't available (shouldn't happen)
+                promotePawn(pawn, "Queen");
+            }
         }
     }
 
@@ -367,24 +415,49 @@ public class Chessboard {
      * Promote a pawn to another piece
      */
     private void promotePawn(Piece pawn, String newPieceName) {
-        // This would be implemented with factory method to create the new piece
-        // For now, just change the name for simplicity
-        pawn.name = newPieceName;
+        // Store the original position
+        int col = pawn.col;
+        int row = pawn.row;
+        boolean isWhite = pawn.isWhite;
 
-        // Reload sprite with new piece type if the view exists
-        if (view != null && view.getContext() != null) {
-            pawn.loadSprite(view.getContext(), tileSize);
+        // Remove the pawn from the board
+        pieceList.remove(pawn);
+
+        // Create a new piece of the desired type
+        Piece newPiece = null;
+        switch (newPieceName) {
+            case "Queen":
+                newPiece = new Queen(this, col, row, isWhite);
+                break;
+            case "Rook":
+                newPiece = new Rook(this, col, row, isWhite);
+                break;
+            case "Bishop":
+                newPiece = new Bishop(this, col, row, isWhite);
+                break;
+            case "Knight":
+                newPiece = new Knight(this, col, row, isWhite);
+                break;
         }
-    }
 
-    /**
-     * Update the visual position of all pieces
-     */
-    public void updateAllPiecesVisualPosition() {
-        for (Piece piece : pieceList) {
-            if (piece != null) {
-                piece.updateVisualPosition();
+        // Add the new piece to the board
+        if (newPiece != null) {
+            pieceList.add(newPiece);
+
+            // Mark the piece as having moved
+            newPiece.isFirstMove = false;
+            newPiece.hasMoved = true;
+
+            // Load the sprite
+            if (view != null && view.getContext() != null) {
+                newPiece.loadSprite(view.getContext(), tileSize);
             }
         }
+
+        // Update the board view
+        if (view != null) {
+            view.invalidate();
+        }
     }
+
 }

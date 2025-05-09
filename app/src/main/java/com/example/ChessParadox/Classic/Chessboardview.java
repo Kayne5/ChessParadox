@@ -33,6 +33,7 @@ public class Chessboardview extends View {
     private Paint darkTilePaint;
     private Paint highlightPaint;
     private Paint selectedPiecePaint;  // New paint for highlighting selected piece
+    private Paint checkHighlightPaint; // New paint for highlighting king in check
     private Paint textPaint;
 
     // Drag and drop
@@ -75,6 +76,11 @@ public class Chessboardview extends View {
         selectedPiecePaint = new Paint();
         selectedPiecePaint.setColor(Color.parseColor("#55FF8800"));
         selectedPiecePaint.setAlpha(180);
+
+        // New paint for highlighting king in check
+        checkHighlightPaint = new Paint();
+        checkHighlightPaint.setColor(Color.parseColor("#FFFF0000")); // Red for check
+        checkHighlightPaint.setAlpha(180);
 
         textPaint = new Paint();
         textPaint.setColor(Color.BLACK);
@@ -171,12 +177,27 @@ public class Chessboardview extends View {
         pieceList.add(piece);
     }
 
+    /**
+     * Check if a king is in check
+     */
+    private boolean isKingInCheck(boolean isWhiteKing) {
+        Piece king = chessBoard.findKing(isWhiteKing);
+        if (king != null) {
+            Move dummyMove = new Move(chessBoard, king, king.col, king.row);
+            return chessBoard.getCheckScanner().isKingInCheck(dummyMove);
+        }
+        return false;
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
         // Draw the chess board
         drawBoard(canvas);
+
+        // Highlight kings in check
+        highlightKingsInCheck(canvas);
 
         // Highlight the selected piece's square if using click-and-move
         if (selectedPiece != null && pieceSelected && !draggingPiece) {
@@ -212,6 +233,35 @@ public class Chessboardview extends View {
         // Continue animation if dragging
         if (draggingPiece) {
             invalidate();
+        }
+    }
+
+    /**
+     * Highlight kings that are in check
+     */
+    private void highlightKingsInCheck(Canvas canvas) {
+        // Check if white king is in check
+        if (isKingInCheck(true)) {
+            Piece whiteKing = chessBoard.findKing(true);
+            if (whiteKing != null) {
+                float left = whiteKing.col * tileSize;
+                float top = whiteKing.row * tileSize;
+                float right = left + tileSize;
+                float bottom = top + tileSize;
+                canvas.drawRect(left, top, right, bottom, checkHighlightPaint);
+            }
+        }
+
+        // Check if black king is in check
+        if (isKingInCheck(false)) {
+            Piece blackKing = chessBoard.findKing(false);
+            if (blackKing != null) {
+                float left = blackKing.col * tileSize;
+                float top = blackKing.row * tileSize;
+                float right = left + tileSize;
+                float bottom = top + tileSize;
+                canvas.drawRect(left, top, right, bottom, checkHighlightPaint);
+            }
         }
     }
 
@@ -430,12 +480,17 @@ public class Chessboardview extends View {
         // Find the king of the current player
         Piece king = chessBoard.findKing(isWhiteToMove);
         if (king != null) {
+            // Check if king is in check and show toast notification
+            Move dummyMove = new Move(chessBoard, king, king.col, king.row);
+            if (chessBoard.getCheckScanner().isKingInCheck(dummyMove)) {
+                Toast.makeText(getContext(), (isWhiteToMove ? "White" : "Black") + " king is in check!", Toast.LENGTH_SHORT).show();
+            }
+
             // Check if the game is over
             if (chessBoard.getCheckScanner().isGameOver(king)) {
                 isGameOver = true;
 
                 // Check if king is in check (checkmate) or not (stalemate)
-                Move dummyMove = new Move(chessBoard, king, king.col, king.row);
                 if (chessBoard.getCheckScanner().isKingInCheck(dummyMove)) {
                     gameResult = isWhiteToMove ? "Black wins by checkmate!" : "White wins by checkmate!";
                 } else {
@@ -445,6 +500,9 @@ public class Chessboardview extends View {
                 Toast.makeText(getContext(), gameResult, Toast.LENGTH_LONG).show();
             }
         }
+
+        // Force a redraw to update king highlight if needed
+        invalidate();
     }
 
     public int getTileSize() {
