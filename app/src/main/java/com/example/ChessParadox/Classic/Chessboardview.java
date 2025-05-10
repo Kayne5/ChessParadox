@@ -23,6 +23,10 @@ public class Chessboardview extends View {
     public int tileSize;
     public ArrayList<Piece> pieceList = new ArrayList<>();
 
+    // Indicator properties
+    private int indicatorSize; // Size of the margin for rank/file indicators
+    private Paint indicatorPaint; // Paint for drawing file and rank indicators
+
     // Game state
     private boolean isWhiteToMove = true;
     private boolean isGameOver = false;
@@ -33,6 +37,7 @@ public class Chessboardview extends View {
     private Paint darkTilePaint;
     private Paint highlightPaint;
     private Paint selectedPiecePaint;  // New paint for highlighting selected piece
+    private Paint checkHighlightPaint; // New paint for highlighting king in check
     private Paint textPaint;
 
     // Drag and drop
@@ -76,13 +81,25 @@ public class Chessboardview extends View {
         selectedPiecePaint.setColor(Color.parseColor("#55FF8800"));
         selectedPiecePaint.setAlpha(180);
 
+        // New paint for highlighting king in check
+        checkHighlightPaint = new Paint();
+        checkHighlightPaint.setColor(Color.parseColor("#FFFF0000")); // Red for check
+        checkHighlightPaint.setAlpha(180);
+
         textPaint = new Paint();
         textPaint.setColor(Color.BLACK);
         textPaint.setTextSize(50);
         textPaint.setTextAlign(Paint.Align.CENTER);
 
+        // Initialize indicator paint
+        indicatorPaint = new Paint();
+        indicatorPaint.setColor(Color.BLACK);
+        indicatorPaint.setTextAlign(Paint.Align.CENTER);
+        indicatorPaint.setTextSize(30); // Will be adjusted in onSizeChanged
+
         // Set a default tile size that will be updated in onSizeChanged
         tileSize = 100;
+        indicatorSize = tileSize / 4; // Default indicator size
 
         // Initialize the chess board
         chessBoard = new Chessboard(this);
@@ -98,16 +115,23 @@ public class Chessboardview extends View {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
 
-        // Calculate the tile size based on the smallest dimension
-        tileSize = Math.min(w, h) / 8;
+        // Calculate the indicator size (margin for rank/file indicators)
+        indicatorSize = Math.min(w, h) / 20; // Adjust as needed
+
+        // Calculate the tile size based on the available space minus indicators
+        int boardSize = Math.min(w - 2 * indicatorSize, h - 2 * indicatorSize);
+        tileSize = boardSize / 8;
+
+        // Update the indicator text size based on the board size
+        indicatorPaint.setTextSize(indicatorSize * 0.7f);
 
         // Update the chessboard tile size
         chessBoard.tileSize = tileSize;
 
         // Update all pieces with new positions and load sprites
         for (Piece piece : pieceList) {
-            piece.xPos = piece.col * tileSize;
-            piece.yPos = piece.row * tileSize;
+            piece.xPos = indicatorSize + piece.col * tileSize;
+            piece.yPos = indicatorSize + piece.row * tileSize;
             piece.loadSprite(getContext(), tileSize);
         }
 
@@ -154,8 +178,8 @@ public class Chessboardview extends View {
 
         // Initialize piece positions and load sprites
         for (Piece piece : pieceList) {
-            piece.xPos = piece.col * tileSize;
-            piece.yPos = piece.row * tileSize;
+            piece.xPos = indicatorSize + piece.col * tileSize;
+            piece.yPos = indicatorSize + piece.row * tileSize;
             piece.loadSprite(getContext(), tileSize);
         }
 
@@ -171,17 +195,32 @@ public class Chessboardview extends View {
         pieceList.add(piece);
     }
 
+    /**
+     * Check if a king is in check
+     */
+    private boolean isKingInCheck(boolean isWhiteKing) {
+        Piece king = chessBoard.findKing(isWhiteKing);
+        if (king != null) {
+            Move dummyMove = new Move(chessBoard, king, king.col, king.row);
+            return chessBoard.getCheckScanner().isKingInCheck(dummyMove);
+        }
+        return false;
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // Draw the chess board
-        drawBoard(canvas);
+        // Draw the chess board with indicators
+        drawBoardWithIndicators(canvas);
+
+        // Highlight kings in check
+        highlightKingsInCheck(canvas);
 
         // Highlight the selected piece's square if using click-and-move
         if (selectedPiece != null && pieceSelected && !draggingPiece) {
-            float left = selectedPiece.col * tileSize;
-            float top = selectedPiece.row * tileSize;
+            float left = indicatorSize + selectedPiece.col * tileSize;
+            float top = indicatorSize + selectedPiece.row * tileSize;
             float right = left + tileSize;
             float bottom = top + tileSize;
             canvas.drawRect(left, top, right, bottom, selectedPiecePaint);
@@ -216,23 +255,76 @@ public class Chessboardview extends View {
     }
 
     /**
-     * Draw the chess board with alternating light and dark tiles
+     * Highlight kings that are in check
      */
-    private void drawBoard(Canvas canvas) {
+    private void highlightKingsInCheck(Canvas canvas) {
+        // Check if white king is in check
+        if (isKingInCheck(true)) {
+            Piece whiteKing = chessBoard.findKing(true);
+            if (whiteKing != null) {
+                float left = indicatorSize + whiteKing.col * tileSize;
+                float top = indicatorSize + whiteKing.row * tileSize;
+                float right = left + tileSize;
+                float bottom = top + tileSize;
+                canvas.drawRect(left, top, right, bottom, checkHighlightPaint);
+            }
+        }
+
+        // Check if black king is in check
+        if (isKingInCheck(false)) {
+            Piece blackKing = chessBoard.findKing(false);
+            if (blackKing != null) {
+                float left = indicatorSize + blackKing.col * tileSize;
+                float top = indicatorSize + blackKing.row * tileSize;
+                float right = left + tileSize;
+                float bottom = top + tileSize;
+                canvas.drawRect(left, top, right, bottom, checkHighlightPaint);
+            }
+        }
+    }
+
+    /**
+     * Draw the chess board with rank and file indicators
+     */
+    private void drawBoardWithIndicators(Canvas canvas) {
+        // Draw the board squares
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
                 // Determine if this is a light or dark tile
                 boolean isLightTile = (row + col) % 2 == 0;
 
-                // Calculate the position and size of this tile
-                float left = col * tileSize;
-                float top = row * tileSize;
+                // Calculate the position and size of this tile, offset by indicator size
+                float left = indicatorSize + col * tileSize;
+                float top = indicatorSize + row * tileSize;
                 float right = left + tileSize;
                 float bottom = top + tileSize;
 
                 // Draw the tile
                 canvas.drawRect(left, top, right, bottom, isLightTile ? lightTilePaint : darkTilePaint);
             }
+        }
+
+        // Set indicator paint color to white
+        indicatorPaint.setColor(Color.WHITE);
+
+        // Draw rank indicators (numbers 1-8) only on the left side
+        for (int row = 0; row < 8; row++) {
+            String rank = String.valueOf(8 - row); // Chess ranks go from 8 (top) to 1 (bottom)
+            float y = indicatorSize + row * tileSize + tileSize / 2 + indicatorPaint.getTextSize() / 3; // Center vertically in tile
+
+            // Only left side rank
+            float leftX = indicatorSize / 2;
+            canvas.drawText(rank, leftX, y, indicatorPaint);
+        }
+
+        // Draw file indicators (letters A-H) only on the bottom
+        for (int col = 0; col < 8; col++) {
+            char file = (char) ('A' + col); // Chess files go from A (left) to H (right)
+            float x = indicatorSize + col * tileSize + tileSize / 2; // Center horizontally in tile
+
+            // Only bottom file
+            float bottomY = indicatorSize + 8 * tileSize + indicatorSize / 2 + indicatorPaint.getTextSize() / 3;
+            canvas.drawText(String.valueOf(file), x, bottomY, indicatorPaint);
         }
     }
 
@@ -244,8 +336,8 @@ public class Chessboardview extends View {
             for (int col = 0; col < 8; col++) {
                 Move move = new Move(chessBoard, selectedPiece, col, row);
                 if (chessBoard.isValidMove(move)) {
-                    float left = col * tileSize;
-                    float top = row * tileSize;
+                    float left = indicatorSize + col * tileSize;
+                    float top = indicatorSize + row * tileSize;
                     float right = left + tileSize;
                     float bottom = top + tileSize;
                     canvas.drawRect(left, top, right, bottom, highlightPaint);
@@ -273,9 +365,9 @@ public class Chessboardview extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        // Convert touch coordinates to board position
-        int col = (int) (event.getX() / tileSize);
-        int row = (int) (event.getY() / tileSize);
+        // Calculate board position, accounting for the indicator margin
+        int col = (int) ((event.getX() - indicatorSize) / tileSize);
+        int row = (int) ((event.getY() - indicatorSize) / tileSize);
 
         // Check if position is within the board
         if (col < 0 || col > 7 || row < 0 || row > 7) {
@@ -315,7 +407,7 @@ public class Chessboardview extends View {
 
                 // If no piece is selected yet, check if we should select one now
                 if (!pieceSelected && !draggingPiece) {
-                    Piece piece = chessBoard.getPiece((int)(touchX / tileSize), (int)(touchY / tileSize));
+                    Piece piece = chessBoard.getPiece(col, row);
                     if (piece != null && piece.isWhite == isWhiteToMove) {
                         selectedPiece = piece;
                         pieceSelected = true;
@@ -403,8 +495,8 @@ public class Chessboardview extends View {
             checkGameStatus();
         } else {
             // Invalid move, return piece to original position
-            selectedPiece.xPos = selectedPiece.col * tileSize;
-            selectedPiece.yPos = selectedPiece.row * tileSize;
+            selectedPiece.xPos = indicatorSize + selectedPiece.col * tileSize;
+            selectedPiece.yPos = indicatorSize + selectedPiece.row * tileSize;
         }
 
         // Reset selection
@@ -418,8 +510,8 @@ public class Chessboardview extends View {
      */
     private void updatePiecesVisualPosition() {
         for (Piece piece : pieceList) {
-            piece.xPos = piece.col * tileSize;
-            piece.yPos = piece.row * tileSize;
+            piece.xPos = indicatorSize + piece.col * tileSize;
+            piece.yPos = indicatorSize + piece.row * tileSize;
         }
     }
 
@@ -430,12 +522,17 @@ public class Chessboardview extends View {
         // Find the king of the current player
         Piece king = chessBoard.findKing(isWhiteToMove);
         if (king != null) {
+            // Check if king is in check and show toast notification
+            Move dummyMove = new Move(chessBoard, king, king.col, king.row);
+            if (chessBoard.getCheckScanner().isKingInCheck(dummyMove)) {
+                Toast.makeText(getContext(), (isWhiteToMove ? "White" : "Black") + " king is in check!", Toast.LENGTH_SHORT).show();
+            }
+
             // Check if the game is over
             if (chessBoard.getCheckScanner().isGameOver(king)) {
                 isGameOver = true;
 
                 // Check if king is in check (checkmate) or not (stalemate)
-                Move dummyMove = new Move(chessBoard, king, king.col, king.row);
                 if (chessBoard.getCheckScanner().isKingInCheck(dummyMove)) {
                     gameResult = isWhiteToMove ? "Black wins by checkmate!" : "White wins by checkmate!";
                 } else {
@@ -445,6 +542,9 @@ public class Chessboardview extends View {
                 Toast.makeText(getContext(), gameResult, Toast.LENGTH_LONG).show();
             }
         }
+
+        // Force a redraw to update king highlight if needed
+        invalidate();
     }
 
     public int getTileSize() {

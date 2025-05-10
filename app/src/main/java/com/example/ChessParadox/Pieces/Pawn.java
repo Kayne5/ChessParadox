@@ -25,7 +25,7 @@ public class Pawn extends Piece {
                     chessBoard.getPiece(col, row) == null;
         }
 
-        // Diagonal captures
+        // Diagonal captures (regular or en passant)
         if ((col == this.col - 1 || col == this.col + 1) && row == this.row + colorDir) {
             // Regular capture
             Piece targetPiece = chessBoard.getPiece(col, row);
@@ -34,11 +34,22 @@ public class Pawn extends Piece {
             }
 
             // En passant capture
-            return chessBoard.getTileNum(col, row) == chessBoard.enPassantTile;
+            int enPassantTile = chessBoard.getTileNum(col, row);
+            if (enPassantTile == chessBoard.enPassantTile) {
+                // The pawn to be captured is in the same column as the destination, but same row as this pawn
+                Piece possiblePawn = chessBoard.getPiece(col, this.row);
+                return possiblePawn != null &&
+                        possiblePawn.name.equals("Pawn") &&
+                        !chessBoard.sameTeam(this, possiblePawn) &&
+                        ((Pawn)possiblePawn).justMovedTwoSquares;
+            }
         }
 
         return false;
     }
+
+    // Track if this pawn just made a two-square move (for en passant logic)
+    public boolean justMovedTwoSquares = false;
 
     @Override
     public boolean moveCollidesWithPiece(int col, int row) {
