@@ -45,7 +45,7 @@ public class Chessboardview extends View {
     private boolean draggingPiece = false;
 
     // Game logic
-    private Chessboard chessBoard;
+    public Chessboard chessBoard;
     public Piece selectedPiece;
     private boolean pieceSelected = false;  // Track if a piece is selected for click-and-move
 
@@ -96,6 +96,15 @@ public class Chessboardview extends View {
         indicatorPaint.setColor(Color.BLACK);
         indicatorPaint.setTextAlign(Paint.Align.CENTER);
         indicatorPaint.setTextSize(30); // Will be adjusted in onSizeChanged
+
+        // Initialize the chess board
+        chessBoard = new Chessboard(this);
+
+        // Set up the board
+        setupBoard();
+
+        // Initialize the check scanner after the board is set up
+        chessBoard.initCheckScanner();
 
         // Set a default tile size that will be updated in onSizeChanged
         tileSize = 100;
@@ -444,6 +453,13 @@ public class Chessboardview extends View {
             }
         }
 
+        // Check if game is over
+        if (isGameOver && action == MotionEvent.ACTION_DOWN) {
+            // Reset game if tapped after game over
+            resetGame();
+            return true;
+        }
+
         return false;
     }
 
@@ -550,4 +566,19 @@ public class Chessboardview extends View {
     public int getTileSize() {
         return tileSize;
     }
+
+    /**
+     * Reset the game and all components
+     */
+    public void resetGame() {
+        setupBoard();
+        chessBoard.reset(); // This will reset the captured pieces views
+        isWhiteToMove = true;
+        isGameOver = false;
+        gameResult = "";
+        selectedPiece = null;
+        pieceSelected = false;
+        invalidate();
+    }
+
 }

@@ -18,7 +18,7 @@ public abstract class Piece {
     public boolean isFirstMove = true;
     public boolean hasMoved;
 
-    protected Bitmap sprite;
+    public Bitmap sprite;
     protected Chessboard chessBoard;
 
     public Piece(Chessboard chessBoard, int col, int row, boolean isWhite) {

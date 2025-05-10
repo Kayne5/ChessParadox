@@ -20,9 +20,29 @@ public class Chessboard {
     public int enPassantTile = -1;
     private CheckScanner checkScanner;
 
+    // Reference to captured pieces views
+    private CapturedPiecesView capturedPiecesViewTop;
+    private CapturedPiecesView capturedPiecesViewBottom;
+
     public Chessboard(Chessboardview view) {
         this.view = view;
         this.tileSize = view != null ? view.getTileSize() : 100;
+    }
+
+    /**
+     * Set references to the captured pieces views
+     */
+    public void setCapturedPiecesViews(CapturedPiecesView top, CapturedPiecesView bottom) {
+        this.capturedPiecesViewTop = top;
+        this.capturedPiecesViewBottom = bottom;
+
+        // Set the piece size based on the board's tile size
+        if (top != null) {
+            top.setPieceSize(tileSize);
+        }
+        if (bottom != null) {
+            bottom.setPieceSize(tileSize);
+        }
     }
 
     /**
@@ -298,6 +318,21 @@ public class Chessboard {
     }
 
     /**
+     * Add a captured piece to the appropriate view
+     */
+    private void addCapturedPiece(Piece piece, boolean capturedByWhite) {
+        if (capturedByWhite) {
+            if (capturedPiecesViewBottom != null) {
+                capturedPiecesViewBottom.addCapturedPiece(piece, true);
+            }
+        } else {
+            if (capturedPiecesViewTop != null) {
+                capturedPiecesViewTop.addCapturedPiece(piece, false);
+            }
+        }
+    }
+
+    /**
      * Make a move on the board
      */
     public void makeMove(Move move) {
@@ -323,6 +358,8 @@ public class Chessboard {
                 // but on the target column
                 Piece capturedPawn = getPiece(move.newCol, oldRow);
                 if (capturedPawn != null && capturedPawn.name.equals("Pawn")) {
+                    // Add to captured pieces view before removing from board
+                    addCapturedPiece(capturedPawn, move.piece.isWhite);
                     pieceList.remove(capturedPawn);
                 }
             }
@@ -370,6 +407,8 @@ public class Chessboard {
         // Capture a piece if there is one at the destination
         Piece capturedPiece = getPiece(move.newCol, move.newRow);
         if (capturedPiece != null) {
+            // Add captured piece to the view before removing from board
+            addCapturedPiece(capturedPiece, move.piece.isWhite);
             pieceList.remove(capturedPiece);
         }
 
@@ -460,4 +499,16 @@ public class Chessboard {
         }
     }
 
+    /**
+     * Reset the board and captured pieces views
+     */
+    public void reset() {
+        // Reset captured pieces views
+        if (capturedPiecesViewTop != null) {
+            capturedPiecesViewTop.resetCapturedPieces();
+        }
+        if (capturedPiecesViewBottom != null) {
+            capturedPiecesViewBottom.resetCapturedPieces();
+        }
+    }
 }
