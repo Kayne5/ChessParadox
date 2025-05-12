@@ -21,50 +21,53 @@ public class Chessboardview extends View {
 
     // Board properties
     public int tileSize;
-    public ArrayList<Piece> pieceList = new ArrayList<>();
+    protected ArrayList<Piece> pieceList = new ArrayList<>();
 
     // Indicator properties
-    private int indicatorSize; // Size of the margin for rank/file indicators
-    private Paint indicatorPaint; // Paint for drawing file and rank indicators
+    protected int indicatorSize; // Size of the margin for rank/file indicators
+    protected Paint indicatorPaint; // Paint for drawing file and rank indicators
 
     // Game state
-    private boolean isWhiteToMove = true;
-    private boolean isGameOver = false;
-    private String gameResult = "";
+    protected boolean isWhiteToMove = true;
+    protected boolean isGameOver = false;
+    protected String gameResult = "";
 
     // UI properties
-    private Paint lightTilePaint;
-    private Paint darkTilePaint;
-    private Paint highlightPaint;
-    private Paint selectedPiecePaint;  // New paint for highlighting selected piece
-    private Paint checkHighlightPaint; // New paint for highlighting king in check
-    private Paint textPaint;
+    protected Paint lightTilePaint;
+    protected Paint darkTilePaint;
+    protected Paint highlightPaint;
+    protected Paint selectedPiecePaint;  // New paint for highlighting selected piece
+    protected Paint checkHighlightPaint; // New paint for highlighting king in check
+    protected Paint textPaint;
 
     // Drag and drop
-    private float touchX, touchY;
-    private boolean draggingPiece = false;
+    protected float touchX, touchY;
+    protected boolean draggingPiece = false;
 
     // Game logic
     public Chessboard chessBoard;
     public Piece selectedPiece;
-    private boolean pieceSelected = false;  // Track if a piece is selected for click-and-move
+    public boolean pieceSelected = false;  // Track if a piece is selected for click-and-move
 
     public Chessboardview(Context context) {
         super(context);
-        init();
+        initializeBoard();
     }
 
     public Chessboardview(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init();
+        initializeBoard();
     }
 
     public Chessboardview(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        initializeBoard();
     }
 
-    private void init() {
+    /**
+     * Initialize the chess board and all its components
+     */
+    protected void initializeBoard() {
         // Initialize paints
         lightTilePaint = new Paint();
         lightTilePaint.setColor(Color.parseColor("#f0d9b5"));
@@ -96,15 +99,6 @@ public class Chessboardview extends View {
         indicatorPaint.setColor(Color.BLACK);
         indicatorPaint.setTextAlign(Paint.Align.CENTER);
         indicatorPaint.setTextSize(30); // Will be adjusted in onSizeChanged
-
-        // Initialize the chess board
-        chessBoard = new Chessboard(this);
-
-        // Set up the board
-        setupBoard();
-
-        // Initialize the check scanner after the board is set up
-        chessBoard.initCheckScanner();
 
         // Set a default tile size that will be updated in onSizeChanged
         tileSize = 100;
@@ -494,7 +488,7 @@ public class Chessboardview extends View {
     /**
      * Attempt to move the selected piece to the specified position
      */
-    private void handleMove(int col, int row) {
+    protected void handleMove(int col, int row) {
         // Create and validate the move
         Move move = new Move(chessBoard, selectedPiece, col, row);
         if (chessBoard.isValidMove(move)) {
@@ -524,7 +518,7 @@ public class Chessboardview extends View {
     /**
      * Update the visual position (xPos, yPos) of all pieces based on their logical position (col, row)
      */
-    private void updatePiecesVisualPosition() {
+    protected void updatePiecesVisualPosition() {
         for (Piece piece : pieceList) {
             piece.xPos = indicatorSize + piece.col * tileSize;
             piece.yPos = indicatorSize + piece.row * tileSize;
@@ -580,5 +574,4 @@ public class Chessboardview extends View {
         pieceSelected = false;
         invalidate();
     }
-
 }

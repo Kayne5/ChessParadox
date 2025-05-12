@@ -31,9 +31,14 @@
 
         <!-- Main Activity (Chess Game) -->
         <activity
-            android:name=".Main.MainActivity"
+            android:name=".Main.ClassicChessActivity"
             android:exported="false">
         </activity>
+
+        <!-- Two Step Ahead (Game Mode) -->
+        <activity
+            android:name=".Main.TwoStepChessActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

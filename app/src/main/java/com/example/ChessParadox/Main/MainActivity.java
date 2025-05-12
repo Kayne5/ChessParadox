@@ -1,104 +1,127 @@
 package com.example.ChessParadox.Main;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 
-import com.example.ChessParadox.Classic.CapturedPiecesView;
-import com.example.ChessParadox.Classic.Chessboardview;
 import com.example.ChessParadox.R;
 
 /**
- * Main activity for the Chess Paradox game
+ * Main activity for the Chess Paradox app
+ * Serves as the entry point and game mode selection screen
  */
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "ChessApp";
-    private Chessboardview chessboardview;
-    private CapturedPiecesView capturedPiecesViewTop;
-    private CapturedPiecesView capturedPiecesViewBottom;
-    private String gameMode = "CLASSIC"; // Default game mode
+    private static final String TAG = "ChessParadox";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        try {
-            // Set to fullscreen for better gameplay experience
-            getWindow().setFlags(
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN
-            );
+        // Set to fullscreen for better visual experience
+        getWindow().setFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN
+        );
 
-            setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);
 
-            // Get the game mode from the intent if available
-            if (getIntent().hasExtra("GAME_MODE")) {
-                gameMode = getIntent().getStringExtra("GAME_MODE");
-            }
-
-            Log.d(TAG, "Starting game with mode: " + gameMode);
-
-            // Find and initialize views
-            chessboardview = findViewById(R.id.chessboardview);
-            capturedPiecesViewTop = findViewById(R.id.capturedPiecesViewTop);
-            capturedPiecesViewBottom = findViewById(R.id.capturedPiecesViewBottom);
-
-            if (chessboardview == null) {
-                throw new IllegalStateException("Chessboard view not found in layout");
-            }
-
-            // Set orientation for captured pieces views
-            if (capturedPiecesViewTop != null) {
-                capturedPiecesViewTop.setOrientation(false); // horizontal layout
-            }
-
-            if (capturedPiecesViewBottom != null) {
-                capturedPiecesViewBottom.setOrientation(false); // horizontal layout
-            }
-
-            // Connect the captured pieces views to the chessboard
-            if (chessboardview.chessBoard != null) {
-                chessboardview.chessBoard.setCapturedPiecesViews(capturedPiecesViewTop, capturedPiecesViewBottom);
-            } else {
-                Log.w(TAG, "Chess board not initialized yet");
-            }
-
-            Log.d(TAG, "Chess game initialized successfully");
-        } catch (Exception e) {
-            Log.e(TAG, "Error initializing chess game", e);
-            Toast.makeText(this, "Error initializing game: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Make sure view is refreshed when activity comes to foreground
-        if (chessboardview != null) {
-            chessboardview.invalidate();
-        }
-
-        // Also refresh captured pieces views
-        if (capturedPiecesViewTop != null) {
-            capturedPiecesViewTop.invalidate();
-        }
-
-        if (capturedPiecesViewBottom != null) {
-            capturedPiecesViewBottom.invalidate();
+        // Handle the tap anywhere to play functionality
+        View tapableArea = findViewById(R.id.tapableArea);
+        if (tapableArea != null) {
+            tapableArea.setOnClickListener(v -> navigateToGameModes());
         }
     }
 
     /**
-     * Reset the game state when needed
+     * Navigate to the game modes selection screen
      */
-    private void resetGame() {
-        if (chessboardview != null) {
-            // This will also reset captured pieces views through the chessboard reference
-            chessboardview.setupBoard();
-            chessboardview.invalidate();
+    private void navigateToGameModes() {
+        setContentView(R.layout.activity_game_modes);
+
+        // Set up the back button on game modes screen
+        ImageView backButton = findViewById(R.id.backButton);
+        if (backButton != null) {
+            backButton.setOnClickListener(v -> {
+                // Return to the main screen
+                setContentView(R.layout.activity_main);
+                // Re-setup the tap anywhere functionality
+                View tapableArea = findViewById(R.id.tapableArea);
+                if (tapableArea != null) {
+                    tapableArea.setOnClickListener(v2 -> navigateToGameModes());
+                }
+            });
         }
+
+        // Set up game mode selection buttons
+        setupGameModeSelections();
+    }
+
+    /**
+     * Set up the game mode selection cards and their click listeners
+     */
+    private void setupGameModeSelections() {
+        // Classic Chess mode
+        Button classicChessButton = findViewById(R.id.playClassicChessButton);
+        if (classicChessButton != null) {
+            classicChessButton.setOnClickListener(v -> startChessGame("CLASSIC"));
+        }
+
+        // Two Steps Ahead mode
+        Button twoStepsButton = findViewById(R.id.playTwoStepsButton);
+        if (twoStepsButton != null) {
+            twoStepsButton.setOnClickListener(v -> startChessGame("TWO_STEPS"));
+        }
+
+        // Fog of War mode - commented out for now
+        Button fogOfWarButton = findViewById(R.id.playFogOfWarButton);
+        if (fogOfWarButton != null) {
+            // Disable the button since Fog of War is not implemented yet
+            fogOfWarButton.setEnabled(false);
+            fogOfWarButton.setText("Coming Soon");
+
+            // Optional: Show a toast when clicked
+            fogOfWarButton.setOnClickListener(v ->
+                    Toast.makeText(this, "Fog of War mode coming soon!", Toast.LENGTH_SHORT).show()
+            );
+
+            // Alternative: Hide the entire container
+            // View fogOfWarContainer = findViewById(R.id.fogOfWarContainer);
+            // if (fogOfWarContainer != null) {
+            //     fogOfWarContainer.setVisibility(View.GONE);
+            // }
+        }
+    }
+
+    /**
+     * Start the appropriate chess game activity based on selected mode
+     * @param gameMode The selected game mode
+     */
+    private void startChessGame(String gameMode) {
+        Intent gameIntent;
+
+        switch (gameMode) {
+            case "TWO_STEPS":
+                gameIntent = new Intent(this, TwoStepChessActivity.class);
+                break;
+            // Fog of War commented out for now
+            // case "FOG_OF_WAR":
+            //     gameIntent = new Intent(this, ClassicChessActivity.class);
+            //     break;
+            case "CLASSIC":
+            default:
+                gameIntent = new Intent(this, ClassicChessActivity.class);
+                break;
+        }
+
+        // Pass the game mode to the activity
+        gameIntent.putExtra("GAME_MODE", gameMode);
+        startActivity(gameIntent);
     }
 }

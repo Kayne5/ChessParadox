@@ -37,17 +37,15 @@ public class GameModesActivity extends AppCompatActivity {
         // Set up classic chess mode
         Button playClassicButton = findViewById(R.id.playClassicChessButton);
         playClassicButton.setOnClickListener(v -> {
-            Intent intent = new Intent(GameModesActivity.this, MainActivity.class);
+            Intent intent = new Intent(GameModesActivity.this, ClassicChessActivity.class);
             startActivity(intent);
         });
 
         // Set up two-steps ahead mode
         Button playTwoStepsButton = findViewById(R.id.playTwoStepsButton);
         playTwoStepsButton.setOnClickListener(v -> {
-            // This would launch a different activity for the Two-steps ahead mode
-            // For now, we'll use the main activity with a parameter
-            Intent intent = new Intent(GameModesActivity.this, MainActivity.class);
-            intent.putExtra("GAME_MODE", "TWO_STEPS");
+            // Launch the dedicated TwoStepChessActivity
+            Intent intent = new Intent(GameModesActivity.this, TwoStepChessActivity.class);
             startActivity(intent);
         });
 
@@ -56,7 +54,7 @@ public class GameModesActivity extends AppCompatActivity {
         playFogOfWarButton.setOnClickListener(v -> {
             // This would launch a different activity for the Fog of War mode
             // For now, we'll use the main activity with a parameter
-            Intent intent = new Intent(GameModesActivity.this, MainActivity.class);
+            Intent intent = new Intent(GameModesActivity.this, ClassicChessActivity.class);
             intent.putExtra("GAME_MODE", "FOG_OF_WAR");
             startActivity(intent);
         });
@@ -86,9 +84,9 @@ public class GameModesActivity extends AppCompatActivity {
                         "who want to improve their chess skills."));
 
         twoStepsInfoIcon.setOnClickListener(v -> showInfoDialog("Two-steps ahead",
-                "A tactical challenge mode where you need to find the best move in a given position. " +
-                        "The computer will analyze your move and provide feedback. This mode helps you " +
-                        "improve your strategic thinking and calculation abilities."));
+                "An exciting variant where you make two moves per turn with different pieces. " +
+                        "This creates new tactical possibilities and deepens strategic planning. " +
+                        "Plan your moves carefully as you can't move the same piece twice in one turn!"));
 
         fogOfWarInfoIcon.setOnClickListener(v -> showInfoDialog("Fog of War",
                 "An exciting variant where enemy pieces are only visible when they are in range of your " +
