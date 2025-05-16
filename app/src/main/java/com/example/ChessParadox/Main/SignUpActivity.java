@@ -4,26 +4,28 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.ImageView;
+import android.widget.EditText;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.ChessParadox.R;
 
 /**
- * Main activity for the Chess Paradox app
- * Serves as the entry point and game mode selection screen
+ * Activity for handling user registration
  */
-public class MainActivity extends AppCompatActivity {
+public class SignUpActivity extends AppCompatActivity {
 
-    private static final String TAG = "ChessParadox";
+    private EditText etUsername, etEmail, etPassword, etConfirmPassword;
+    private Button btnSignUp, btnLoginLink;
+    private SharedPreferences sharedPreferences;
     private static final String SHARED_PREF_NAME = "chessParadoxPrefs";
     private static final String KEY_IS_LOGGED_IN = "isLoggedIn";
     private static final String KEY_USERNAME = "username";
-    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,135 +37,132 @@ public class MainActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
 
+        setContentView(R.layout.activity_signup_section);
+
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
 
-        // Check if user is logged in
-        if (!sharedPreferences.getBoolean(KEY_IS_LOGGED_IN, false)) {
-            redirectToLogin();
+        // Set up UI components
+        etUsername = findViewById(R.id.etUsername);
+        etEmail = findViewById(R.id.etEmail);
+        etPassword = findViewById(R.id.etPassword);
+        etConfirmPassword = findViewById(R.id.etConfirmPassword);
+        btnSignUp = findViewById(R.id.btnSignUp);
+        btnLoginLink = findViewById(R.id.btnLoginLink);
+
+        // Set up sign up button click listener
+        btnSignUp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                registerUser();
+            }
+        });
+
+        // Set up login link button click listener
+        btnLoginLink.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Navigate back to LogInActivity
+                Intent intent = new Intent(SignUpActivity.this, LogInActivity.class);
+                startActivity(intent);
+                finish(); // Close the sign up activity
+            }
+        });
+    }
+
+    /**
+     * Handle user registration
+     */
+    private void registerUser() {
+        // Get input values
+        String username = etUsername.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+        String confirmPassword = etConfirmPassword.getText().toString().trim();
+
+        // Validate input fields
+        if (TextUtils.isEmpty(username)) {
+            etUsername.setError("Username is required");
+            etUsername.requestFocus();
             return;
         }
 
-        setContentView(R.layout.activity_main);
-
-        // Handle the tap anywhere to play functionality
-        View tapableArea = findViewById(R.id.tapableArea);
-        if (tapableArea != null) {
-            tapableArea.setOnClickListener(v -> navigateToGameModes());
-        }
-    }
-
-    /**
-     * Redirect user to login screen if not authenticated
-     */
-    private void redirectToLogin() {
-        Intent intent = new Intent(MainActivity.this, LogInActivity.class);
-        startActivity(intent);
-        finish();  // Close this activity so user can't go back without logging in
-    }
-
-    /**
-     * Navigate to the game modes selection screen
-     */
-    private void navigateToGameModes() {
-        setContentView(R.layout.activity_game_modes);
-
-        // Set up the back button on game modes screen
-        ImageView backButton = findViewById(R.id.backButton);
-        if (backButton != null) {
-            backButton.setOnClickListener(v -> {
-                // Return to the main screen
-                setContentView(R.layout.activity_main);
-                // Re-setup the tap anywhere functionality
-                View tapableArea = findViewById(R.id.tapableArea);
-                if (tapableArea != null) {
-                    tapableArea.setOnClickListener(v2 -> navigateToGameModes());
-                }
-            });
+        if (TextUtils.isEmpty(email)) {
+            etEmail.setError("Email is required");
+            etEmail.requestFocus();
+            return;
         }
 
-        // Add logout button
-        Button logoutButton = findViewById(R.id.logoutButton);
-        if (logoutButton != null) {
-            logoutButton.setOnClickListener(v -> logoutUser());
+        if (!isValidEmail(email)) {
+            etEmail.setError("Enter a valid email");
+            etEmail.requestFocus();
+            return;
         }
 
-        // Set up game mode selection buttons
-        setupGameModeSelections();
+        if (TextUtils.isEmpty(password)) {
+            etPassword.setError("Password is required");
+            etPassword.requestFocus();
+            return;
+        }
 
-        // Display welcome message with username
-        String username = sharedPreferences.getString(KEY_USERNAME, "Player");
-        Toast.makeText(this, "Welcome, " + username + "!", Toast.LENGTH_SHORT).show();
-    }
+        if (password.length() < 6) {
+            etPassword.setError("Password must be at least 6 characters");
+            etPassword.requestFocus();
+            return;
+        }
 
-    /**
-     * Log out the current user
-     */
-    private void logoutUser() {
-        // Clear login status
+        if (TextUtils.isEmpty(confirmPassword)) {
+            etConfirmPassword.setError("Confirm your password");
+            etConfirmPassword.requestFocus();
+            return;
+        }
+
+        if (!password.equals(confirmPassword)) {
+            etConfirmPassword.setError("Passwords don't match");
+            etConfirmPassword.requestFocus();
+            return;
+        }
+
+        // Check if username already exists
+        SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        if (userPrefs.contains(username)) {
+            etUsername.setError("Username already exists");
+            etUsername.requestFocus();
+            return;
+        }
+
+        // Save user credentials
+        SharedPreferences.Editor userEditor = userPrefs.edit();
+        userEditor.putString(username, password);
+        userEditor.putString(username + "_email", email);
+        userEditor.apply();
+
+        // Auto login after registration
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean(KEY_IS_LOGGED_IN, false);
-        editor.remove(KEY_USERNAME);
+        editor.putBoolean(KEY_IS_LOGGED_IN, true);
+        editor.putString(KEY_USERNAME, username);
         editor.apply();
 
-        Toast.makeText(MainActivity.this, "You have been logged out", Toast.LENGTH_SHORT).show();
-        redirectToLogin();
+        Toast.makeText(SignUpActivity.this, "Registration successful!", Toast.LENGTH_SHORT).show();
+        navigateToMainActivity();
     }
 
     /**
-     * Set up the game mode selection cards and their click listeners
+     * Simple email validation
+     * @param email Email to validate
+     * @return true if email format is valid
      */
-    private void setupGameModeSelections() {
-        // Classic Chess mode
-        Button classicChessButton = findViewById(R.id.playClassicChessButton);
-        if (classicChessButton != null) {
-            classicChessButton.setOnClickListener(v -> startChessGame("CLASSIC"));
-        }
-
-        // Two Steps Ahead mode
-        Button twoStepsButton = findViewById(R.id.playTwoStepsButton);
-        if (twoStepsButton != null) {
-            twoStepsButton.setOnClickListener(v -> startChessGame("TWO_STEPS"));
-        }
-
-        // Fog of War mode - commented out for now
-        Button fogOfWarButton = findViewById(R.id.playFogOfWarButton);
-        if (fogOfWarButton != null) {
-            // Disable the button since Fog of War is not implemented yet
-            fogOfWarButton.setEnabled(false);
-            fogOfWarButton.setText("Coming Soon");
-
-            // Optional: Show a toast when clicked
-            fogOfWarButton.setOnClickListener(v ->
-                    Toast.makeText(this, "Fog of War mode coming soon!", Toast.LENGTH_SHORT).show()
-            );
-        }
+    private boolean isValidEmail(String email) {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
     }
 
     /**
-     * Start the appropriate chess game activity based on selected mode
-     * @param gameMode The selected game mode
+     * Navigate to MainActivity after successful registration
      */
-    private void startChessGame(String gameMode) {
-        Intent gameIntent;
-
-        switch (gameMode) {
-            case "TWO_STEPS":
-                gameIntent = new Intent(this, TwoStepChessActivity.class);
-                break;
-            case "CLASSIC":
-            default:
-                gameIntent = new Intent(this, ClassicChessActivity.class);
-                break;
-        }
-
-        // Pass the game mode to the activity
-        gameIntent.putExtra("GAME_MODE", gameMode);
-
-        // Also pass the username
-        String username = sharedPreferences.getString(KEY_USERNAME, "Player");
-        gameIntent.putExtra("USERNAME", username);
-
-        startActivity(gameIntent);
+    private void navigateToMainActivity() {
+        Intent intent = new Intent(SignUpActivity.this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();  // Close the sign up activity
     }
 }

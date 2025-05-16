@@ -1,14 +1,17 @@
 package com.example.ChessParadox.Main;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity;
 
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.ChessParadox.R;
 
@@ -19,6 +22,10 @@ import com.example.ChessParadox.R;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "ChessParadox";
+    private static final String SHARED_PREF_NAME = "chessParadoxPrefs";
+    private static final String KEY_IS_LOGGED_IN = "isLoggedIn";
+    private static final String KEY_USERNAME = "username";
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +37,15 @@ public class MainActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
 
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
+
+        // Check if user is logged in
+        if (!sharedPreferences.getBoolean(KEY_IS_LOGGED_IN, false)) {
+            redirectToLogin();
+            return;
+        }
+
         setContentView(R.layout.activity_main);
 
         // Handle the tap anywhere to play functionality
@@ -37,6 +53,15 @@ public class MainActivity extends AppCompatActivity {
         if (tapableArea != null) {
             tapableArea.setOnClickListener(v -> navigateToGameModes());
         }
+    }
+
+    /**
+     * Redirect user to login screen if not authenticated
+     */
+    private void redirectToLogin() {
+        Intent intent = new Intent(MainActivity.this, LogInActivity.class);
+        startActivity(intent);
+        finish();  // Close this activity so user can't go back without logging in
     }
 
     /**
@@ -59,8 +84,32 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        // Add logout button
+        Button logoutButton = findViewById(R.id.logoutButton);
+        if (logoutButton != null) {
+            logoutButton.setOnClickListener(v -> logoutUser());
+        }
+
         // Set up game mode selection buttons
         setupGameModeSelections();
+
+        // Display welcome message with username
+        String username = sharedPreferences.getString(KEY_USERNAME, "Player");
+        Toast.makeText(this, "Welcome, " + username + "!", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Log out the current user
+     */
+    private void logoutUser() {
+        // Clear login status
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(KEY_IS_LOGGED_IN, false);
+        editor.remove(KEY_USERNAME);
+        editor.apply();
+
+        Toast.makeText(MainActivity.this, "You have been logged out", Toast.LENGTH_SHORT).show();
+        redirectToLogin();
     }
 
     /**
@@ -90,12 +139,6 @@ public class MainActivity extends AppCompatActivity {
             fogOfWarButton.setOnClickListener(v ->
                     Toast.makeText(this, "Fog of War mode coming soon!", Toast.LENGTH_SHORT).show()
             );
-
-            // Alternative: Hide the entire container
-            // View fogOfWarContainer = findViewById(R.id.fogOfWarContainer);
-            // if (fogOfWarContainer != null) {
-            //     fogOfWarContainer.setVisibility(View.GONE);
-            // }
         }
     }
 
@@ -110,10 +153,6 @@ public class MainActivity extends AppCompatActivity {
             case "TWO_STEPS":
                 gameIntent = new Intent(this, TwoStepChessActivity.class);
                 break;
-            // Fog of War commented out for now
-            // case "FOG_OF_WAR":
-            //     gameIntent = new Intent(this, ClassicChessActivity.class);
-            //     break;
             case "CLASSIC":
             default:
                 gameIntent = new Intent(this, ClassicChessActivity.class);
@@ -122,6 +161,11 @@ public class MainActivity extends AppCompatActivity {
 
         // Pass the game mode to the activity
         gameIntent.putExtra("GAME_MODE", gameMode);
+
+        // Also pass the username
+        String username = sharedPreferences.getString(KEY_USERNAME, "Player");
+        gameIntent.putExtra("USERNAME", username);
+
         startActivity(gameIntent);
     }
 }
