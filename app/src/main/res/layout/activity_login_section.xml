@@ -40,8 +40,8 @@
         android:layout_marginEnd="48dp"
         android:background="@drawable/game_mode_background"
         android:ems="10"
-        android:hint="Username"
-        android:inputType="text"
+        android:hint="Email"
+        android:inputType="textEmailAddress"
         android:padding="12dp"
         android:textColor="#FF000000"
         android:textColorHint="#80000000"
@@ -93,7 +93,6 @@
         android:textAllCaps="false"
         android:textColor="@android:color/white"
         android:textSize="14sp"
-
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnLogin" />
