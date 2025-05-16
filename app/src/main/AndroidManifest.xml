@@ -15,25 +15,37 @@
 
         <!-- Start Page Activity - Set as LAUNCHER -->
         <activity
-            android:name=".Main.StartPageActivity"
-            android:exported="true">
+            android:name=".Main.MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Game Modes Activity -->
+        <!-- Login Activity -->
         <activity
-            android:name=".Main.GameModesActivity"
-            android:exported="false">
-        </activity>
+            android:name=".Main.LogInActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
-        <!-- Main Activity (Chess Game) -->
+        <!-- Sign Up Activity -->
         <activity
-            android:name=".Main.MainActivity"
-            android:exported="false">
-        </activity>
+            android:name=".Main.SignUpActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Chess Game Activities -->
+        <activity
+            android:name=".Main.ClassicChessActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".Main.TwoStepChessActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>
