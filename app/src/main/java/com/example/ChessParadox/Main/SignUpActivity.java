@@ -5,27 +5,39 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.ChessParadox.R;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserProfileChangeRequest;
 
 /**
  * Activity for handling user registration
  */
 public class SignUpActivity extends AppCompatActivity {
 
+    private static final String TAG = "FirebaseSignUp";
     private EditText etUsername, etEmail, etPassword, etConfirmPassword;
     private Button btnSignUp, btnLoginLink;
     private SharedPreferences sharedPreferences;
     private static final String SHARED_PREF_NAME = "chessParadoxPrefs";
     private static final String KEY_IS_LOGGED_IN = "isLoggedIn";
     private static final String KEY_USERNAME = "username";
+
+    // Firebase Auth
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +50,9 @@ public class SignUpActivity extends AppCompatActivity {
         );
 
         setContentView(R.layout.activity_signup_section);
+
+        // Initialize Firebase Auth
+        mAuth = FirebaseAuth.getInstance();
 
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
@@ -71,12 +86,12 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
     /**
-     * Handle user registration
+     * Handle user registration with Firebase
      */
     private void registerUser() {
         // Get input values
-        String username = etUsername.getText().toString().trim();
-        String email = etEmail.getText().toString().trim();
+        final String username = etUsername.getText().toString().trim();
+        final String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
         String confirmPassword = etConfirmPassword.getText().toString().trim();
 
@@ -123,28 +138,54 @@ public class SignUpActivity extends AppCompatActivity {
             return;
         }
 
-        // Check if username already exists
-        SharedPreferences userPrefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        if (userPrefs.contains(username)) {
-            etUsername.setError("Username already exists");
-            etUsername.requestFocus();
-            return;
-        }
+        // Disable sign up button during registration
+        btnSignUp.setEnabled(false);
 
-        // Save user credentials
-        SharedPreferences.Editor userEditor = userPrefs.edit();
-        userEditor.putString(username, password);
-        userEditor.putString(username + "_email", email);
-        userEditor.apply();
+        // Create user with email and password in Firebase
+        mAuth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        // Re-enable sign up button
+                        btnSignUp.setEnabled(true);
 
-        // Auto login after registration
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean(KEY_IS_LOGGED_IN, true);
-        editor.putString(KEY_USERNAME, username);
-        editor.apply();
+                        if (task.isSuccessful()) {
+                            // Sign up success
+                            Log.d(TAG, "createUserWithEmail:success");
+                            FirebaseUser user = mAuth.getCurrentUser();
 
-        Toast.makeText(SignUpActivity.this, "Registration successful!", Toast.LENGTH_SHORT).show();
-        navigateToMainActivity();
+                            // Update user profile with username
+                            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                    .setDisplayName(username)
+                                    .build();
+
+                            user.updateProfile(profileUpdates)
+                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+                                            if (task.isSuccessful()) {
+                                                Log.d(TAG, "User profile updated.");
+                                            }
+                                        }
+                                    });
+
+                            // Auto login after registration by updating SharedPreferences
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putBoolean(KEY_IS_LOGGED_IN, true);
+                            editor.putString(KEY_USERNAME, username);
+                            editor.apply();
+
+                            Toast.makeText(SignUpActivity.this, "Registration successful!",
+                                    Toast.LENGTH_SHORT).show();
+                            navigateToMainActivity();
+                        } else {
+                            // If sign up fails, display a message to the user
+                            Log.w(TAG, "createUserWithEmail:failure", task.getException());
+                            Toast.makeText(SignUpActivity.this, "Registration failed: " +
+                                    task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
     }
 
     /**

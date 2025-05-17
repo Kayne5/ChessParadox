@@ -14,6 +14,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.ChessParadox.R;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 /**
  * Main activity for the Chess Paradox app
@@ -27,6 +29,9 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_USERNAME = "username";
     private SharedPreferences sharedPreferences;
 
+    // Firebase Auth
+    private FirebaseAuth mAuth;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,11 +42,15 @@ public class MainActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
 
+        // Initialize Firebase Auth
+        mAuth = FirebaseAuth.getInstance();
+
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
 
-        // Check if user is logged in
-        if (!sharedPreferences.getBoolean(KEY_IS_LOGGED_IN, false)) {
+        // Check if user is logged in with Firebase
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
             redirectToLogin();
             return;
         }
@@ -52,6 +61,16 @@ public class MainActivity extends AppCompatActivity {
         View tapableArea = findViewById(R.id.tapableArea);
         if (tapableArea != null) {
             tapableArea.setOnClickListener(v -> navigateToGameModes());
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        // Check if user is signed in (non-null) and update UI accordingly
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if(currentUser == null){
+            redirectToLogin();
         }
     }
 
@@ -93,16 +112,24 @@ public class MainActivity extends AppCompatActivity {
         // Set up game mode selection buttons
         setupGameModeSelections();
 
-        // Display welcome message with username
-        String username = sharedPreferences.getString(KEY_USERNAME, "Player");
+        // Display welcome message with username from Firebase
+        FirebaseUser user = mAuth.getCurrentUser();
+        String username = user.getDisplayName();
+        if (username == null || username.isEmpty()) {
+            // If no display name set, use email before @ symbol
+            username = user.getEmail().split("@")[0];
+        }
         Toast.makeText(this, "Welcome, " + username + "!", Toast.LENGTH_SHORT).show();
     }
 
     /**
-     * Log out the current user
+     * Log out the current user using Firebase
      */
     private void logoutUser() {
-        // Clear login status
+        // Sign out from Firebase
+        mAuth.signOut();
+
+        // Clear login status in SharedPreferences too
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean(KEY_IS_LOGGED_IN, false);
         editor.remove(KEY_USERNAME);
@@ -162,8 +189,13 @@ public class MainActivity extends AppCompatActivity {
         // Pass the game mode to the activity
         gameIntent.putExtra("GAME_MODE", gameMode);
 
-        // Also pass the username
-        String username = sharedPreferences.getString(KEY_USERNAME, "Player");
+        // Get username from Firebase user
+        FirebaseUser user = mAuth.getCurrentUser();
+        String username = user.getDisplayName();
+        if (username == null || username.isEmpty()) {
+            // If no display name set, use email before @ symbol
+            username = user.getEmail().split("@")[0];
+        }
         gameIntent.putExtra("USERNAME", username);
 
         startActivity(gameIntent);
